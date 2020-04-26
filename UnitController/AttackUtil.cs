@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class AttackUtil : MonoBehaviour
 {
+    #region Variables
     private SelectionManager _select;
     private SphereCollider _attackRangeColl;
     private Animator _anim;
@@ -11,37 +12,45 @@ public class AttackUtil : MonoBehaviour
     [SerializeField]
     private float attackRangeRadius = 7f;
     [SerializeField]
-    private bool isAttacking = false;
+    private bool isWaitingForCoolDown = false;
     [SerializeField]
     private float globalCoolDown = 1.5f;
     public List<GameObject> inAttackRange = new List<GameObject>();
     public GameObject attackTarget;
 
+    #endregion
     void Start()
     {
+        #region References
         _select = GameObject.Find("SelectionManager").GetComponent<SelectionManager>();
         _attackRangeColl = GameObject.Find("AttackRange").GetComponent<SphereCollider>();
         _anim = gameObject.GetComponent<Animator>();
+
+        #endregion
 
         _attackRangeColl.radius = attackRangeRadius;
     }
 
     public IEnumerator Attack()
     {
-        if (!isAttacking)
+        if (!isWaitingForCoolDown)
         {
-            isAttacking = true;
-            //Initiate casting
+            Debug.Log("Start Attack");
+            isWaitingForCoolDown = true;
+            _anim.SetBool("IsAttacking", true);
+            //Initiate casting animation
             _anim.Play("Spell_1");
-            //Cooldown time
+            //Wait for global cooldown time
             yield return new WaitForSeconds(globalCoolDown);
-            isAttacking = false;
+            isWaitingForCoolDown = false;
         }
     }          
 
     public void AttackFrame()
-    {
-        if (CheckIfAttackTargetInRange())
+    {   
+        // Frame in animation where attack is
+        // actually delivered
+        if (CheckAttackTargetInRange())
         {
             CastAttack();
         }
@@ -50,34 +59,44 @@ public class AttackUtil : MonoBehaviour
     public void CastAttack()
     {
         Debug.Log("Cast Attack");
-        //GameObject _spell = Instantiate(Resources.Load("FireBall")) as GameObject;
+        // Instantiate the projectile/spell prefab
         GameObject _spell = Instantiate(Resources.Load("FireBall"),
             this.transform.position + new Vector3(0, 0.5f, 0),
             Quaternion.identity,
             GameObject.Find("Projectiles").transform) as GameObject;
         Projectile _projectile = _spell.GetComponent<Projectile>();
+        // Give the Projectile a target obj or direction
         _projectile.targetObj = attackTarget;
     }
 
-    public void CheckIfTargetAttackable()
+    public void StopAttack()
     {
-        var clickedObj = _select.GetClickedObject();
-        if (clickedObj.layer == 9) // 9 = Enemy unit
+        Debug.Log("Stop Attack");
+        _anim.SetBool("IsAttacking", false);
+        attackTarget = null;
+    }
+
+    public bool CheckTargetAttackable(GameObject obj)
+    {
+        if (obj.layer == 9) // 9 = Enemy unit
         {
-            attackTarget = clickedObj.transform.parent.gameObject;
+            attackTarget = obj.transform.parent.gameObject;
+            return true;
         }
         else
         {
             attackTarget = null;
+            return false;
         }
     }
 
-    public bool CheckIfAttackTargetInRange()
+    public bool CheckAttackTargetInRange()
     {
-        if (attackTarget != null && inAttackRange.Contains(attackTarget))
-        {
-            return true;
-        }
-        return false;
+        return inAttackRange.Contains(attackTarget);
+    }
+
+    public bool CheckHasAttackTarget()
+    {
+        return attackTarget != null;
     }
 }

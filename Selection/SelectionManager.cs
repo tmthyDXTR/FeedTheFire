@@ -5,7 +5,8 @@ using UnityEngine;
 public class SelectionManager : MonoBehaviour
 {
     public List<GameObject> currentSelected = new List<GameObject>();
-    private Selectable selectableObject;
+    
+    private Selectable _selectableObject;
 
     void Start()
     {
@@ -26,7 +27,7 @@ public class SelectionManager : MonoBehaviour
                 Select(clickedObj.transform.parent.gameObject);
             }
 
-            // If left clicked on not selectable ground / other things
+            // If left clicked on not selectable / ground / other things
             // deselect everything
             else
             {
@@ -39,8 +40,8 @@ public class SelectionManager : MonoBehaviour
 
     private void Select(GameObject obj)
     {
-        selectableObject = obj.GetComponent<Selectable>();
-        selectableObject.isSelected = true;
+        _selectableObject = obj.GetComponent<Selectable>();
+        _selectableObject.isSelected = true;
         // Add object to selection array if not selected yet
         if (!currentSelected.Contains(obj))
         {
@@ -53,14 +54,15 @@ public class SelectionManager : MonoBehaviour
     {
         if (currentSelected.Count > 0)
         {
+            Debug.Log("Deselected all current selected objects");
             foreach (GameObject obj in currentSelected)
             {
-                selectableObject = obj.GetComponent<Selectable>();
-                selectableObject.isSelected = false;                
+                _selectableObject = obj.GetComponent<Selectable>();
+                _selectableObject.isSelected = false;                
             }
         }
         currentSelected.Clear();
-        Debug.Log("Deselected all current selected objects");
+        
     }
 
     public GameObject GetClickedObject()
