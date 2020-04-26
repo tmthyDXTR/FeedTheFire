@@ -17,7 +17,7 @@ public class HeroController : MonoBehaviour
         Idling,
         Moving,
         Attacking,
-        Strafing,
+        Jumping,
         Stunned,
         Dead,
     }
@@ -39,8 +39,13 @@ public class HeroController : MonoBehaviour
         {   // Enemy Right clicked
             if (Input.GetMouseButtonDown(1)) 
             {
-                _attack.CheckIfEnemyUnit();
+                _attack.CheckIfTargetAttackable();
                 _unit.MoveTo(_select.GetMousePos());
+            }
+            if (Input.GetKeyDown(KeyCode.Space))
+            {
+                Debug.Log("Jump");
+                _unit.JumpTo(_select.GetMousePos());
             }
         }       
 
@@ -79,12 +84,22 @@ public class HeroController : MonoBehaviour
                 break;
 
             case State.Attacking:
+                if (_attack.CheckIfAttackTargetInRange())
+                {
+                    this.transform.LookAt(_attack.attackTarget.transform);
+                    StartCoroutine(_attack.Attack());
+                }
                 if (_unit.moveTarget != Vector3.zero)
                 {
                     _anim.SetBool("IsAttacking", false);
                     _anim.SetBool("IsMoving", true);
                     state = State.Moving;
                 }
+                break;
+
+            case State.Jumping:
+
+
                 break;
         }
     }

@@ -26,6 +26,11 @@ public class UnitUtil : MonoBehaviour
         _navAgent.SetDestination(position);      
     }
 
+    public void JumpTo(Vector3 position)
+    {
+        moveTarget = position;
+    }
+
     public bool CheckTargetReached()
     {
         if (_navAgent.pathPending)
