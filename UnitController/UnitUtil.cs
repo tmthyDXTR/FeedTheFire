@@ -7,6 +7,8 @@ public class UnitUtil : MonoBehaviour
     #region Variables
     private UnityEngine.AI.NavMeshAgent _navAgent;
     private Animator _anim;
+    private SelectionManager _select;
+
 
     [SerializeField]
     private Vector3 moveTarget;
@@ -18,6 +20,11 @@ public class UnitUtil : MonoBehaviour
     private float jumpDistance = 5f;
     [SerializeField]
     private float jumpSpeed = 10f;
+    [SerializeField]
+    private bool jumpCollision = false;
+
+
+    public Vector3 lastPosition;
 
     #endregion
     void Start()
@@ -25,8 +32,10 @@ public class UnitUtil : MonoBehaviour
         #region References
         _navAgent = GetComponent<UnityEngine.AI.NavMeshAgent>();
         _anim = gameObject.GetComponent<Animator>();
+        _select = GameObject.Find("SelectionManager").GetComponent<SelectionManager>();
 
         #endregion
+
     }
 
     public void StopMoving()
@@ -57,27 +66,56 @@ public class UnitUtil : MonoBehaviour
         moveTarget = position;
     }
 
-    public void SetJumpTarget(Vector3 targetPosition)
+    public void SetJumpTarget(Vector3 mousePos)
     {
-        var jumpDirection = (targetPosition - this.transform.position).normalized;
-        jumpTarget = this.transform.position + jumpDirection * jumpDistance;        
-    }
-
-    public void JumpToTarget()
-    {
-        _navAgent.ResetPath();
-        moveTarget = Vector3.zero;
-        float step = jumpSpeed * Time.fixedDeltaTime; // calculate distance to move
-        this.transform.position = Vector3.MoveTowards(this.transform.position, jumpTarget, step);
-        this.transform.LookAt(jumpTarget);
+        var jumpDirection = (mousePos - new Vector3(transform.position.x, 0, transform.position.z)).normalized;
+        jumpTarget = this.transform.position + jumpDirection * jumpDistance;
         _anim.SetBool("IsMoving", false);
         _anim.SetBool("IsAttacking", false);
         _anim.SetBool("IsJumping", true);
     }
 
+    public void JumpToTarget()
+    {
+        this.transform.LookAt(jumpTarget);
+        moveTarget = Vector3.zero;
+        float step = jumpSpeed * Time.fixedDeltaTime; // calculate distance to move
+        this.transform.position = Vector3.MoveTowards(this.transform.position, jumpTarget, step);
+    }
+
+    public void SetJumpCollision(bool value)
+    {
+        jumpCollision = value;
+    }
+
+    public bool CheckJumpCollision()
+    {
+        return jumpCollision;
+    }
+
+    public bool CheckIfStoppedMoving()
+    {        
+        if (this.transform.position != lastPosition)
+        {
+            lastPosition = this.transform.position;
+            return false;
+        }
+        else
+        {
+            return true;
+        }        
+    }
+
+    public void DrawJumpRay()
+    {
+        //Debug.Log(_select.GetMousePos());
+        var jumpDirection = (_select.GetMousePos() - this.transform.position).normalized;
+        Debug.DrawRay(this.transform.position, jumpDirection * jumpDistance);
+    }
+
     public bool CheckJumpTargetReached()
     {
-        return (Vector3.Distance(transform.position, jumpTarget) < 0.1f);    
+        return (Vector3.Distance(transform.position, jumpTarget) < .1f);    
     }
 
     public bool CheckTargetReached()

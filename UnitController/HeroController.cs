@@ -37,12 +37,22 @@ public class HeroController : MonoBehaviour
         _anim = gameObject.GetComponent<Animator>();
         _attack = gameObject.GetComponent<AttackUtil>();
 
-
         #endregion
     }
 
+    //void Awake()
+    //{
+    //    // Reset Jump Collision Detection
+    //    _unit.SetJumpCollision(false);
+    //}
+
     void Update()
     {
+
+        // Update Debug Log
+        _unit.DrawJumpRay();
+
+
         #region Input handler
         // First check if this unit is selected
         if (_selectable.isSelected)
@@ -54,7 +64,7 @@ public class HeroController : MonoBehaviour
                 GameObject clickedObj = _select.GetClickedObject();
                 Vector3 clickedPos = _select.GetMousePos();
                 // If the right clicked object is not attackable
-                // If it is attackable, it is set as attack target
+                // If it is attackable, the check sets it as attack target
                 if (!_attack.CheckTargetAttackable(clickedObj))
                 {
                     // Set the clicked position as new move target
@@ -64,10 +74,14 @@ public class HeroController : MonoBehaviour
             // Space key action
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                Debug.Log("Jump");
-                _unit.SetJumpTarget(_select.GetMousePos());
-                _attack.StopAttack();
-                state = State.Jumping;
+                if (!state.Equals(State.Jumping))
+                {
+                    Debug.Log("Jump");
+                    _unit.SetJumpTarget(_select.GetMousePos());
+                    _unit.lastPosition = this.transform.position;
+                    _attack.StopAttack();
+                    state = State.Jumping;
+                }                
             }
         }
         #endregion
@@ -83,10 +97,10 @@ public class HeroController : MonoBehaviour
                     _unit.MoveToTarget();
                     state = State.Moving;
                 }
-                // If unit has an attack target and
-                // it is in attack range
+                // If unit has an attack target                
                 if (_attack.CheckHasAttackTarget())
                 {
+                    // and it is in attack range
                     if (_attack.CheckAttackTargetInRange())
                     {
                         _attack.Attack();
@@ -112,18 +126,17 @@ public class HeroController : MonoBehaviour
                     _unit.StopMoving();
                     state = State.Idling;
                 }
-
-                // If unit has an attack target and
-                // it is in attack range
+                // If unit has an attack target                
                 if (_attack.CheckHasAttackTarget())
                 {
+                    // and it is in attack range
                     if (_attack.CheckAttackTargetInRange())
                     {
                         _unit.StopMoving();
                         _attack.Attack();
                         state = State.Attacking;
                     }
-                    // If it not in rage, keep moving towards it
+                    // If it not in range, keep moving towards it
                     else
                     {
                         _unit.SetMoveTarget(_attack.attackTarget.transform.position);
@@ -135,7 +148,7 @@ public class HeroController : MonoBehaviour
 
             #region State Attacking
             case State.Attacking:
-                // If unit has an attack targe               
+                // If unit has an attack target              
                 if (_attack.CheckHasAttackTarget())
                 {
                     // and it is in attack range
@@ -145,9 +158,10 @@ public class HeroController : MonoBehaviour
                         this.transform.LookAt(_attack.attackTarget.transform);
                         StartCoroutine(_attack.Attack());
                     }
+                    // If it not in range, keep moving towards it
                     else
                     {
-                        _attack.StopAttack();
+                        _unit.SetMoveTarget(_attack.attackTarget.transform.position);
                         state = State.Moving;
                     }
                 }
@@ -157,7 +171,7 @@ public class HeroController : MonoBehaviour
                     _attack.StopAttack();
                     state = State.Moving;
                 }
-                // If unit has no attack an move target
+                // If unit has no attack and move target
                 else
                 {
                     _attack.StopAttack();
@@ -170,16 +184,25 @@ public class HeroController : MonoBehaviour
             #region State Jumping
             case State.Jumping:
                 _unit.JumpToTarget();
-                // If unit hits obstacle during jump
-                // stop the jump
-
-
-                // If jump target reached
+                // If jump target reached stop the jump
                 if (_unit.CheckJumpTargetReached())
                 {
                     _unit.StopMoving();
                     state = State.Idling;
-                }                
+                }
+                // or if unit hits obstacle during jump
+                if (_unit.CheckJumpCollision())
+                {
+                    _unit.StopMoving();
+                    _unit.SetJumpCollision(false);
+                    state = State.Idling;
+                }
+                // *** Detection Hotfix if unit got stuck on an obstacle ***
+                if (_unit.CheckIfStoppedMoving())
+                {
+                    _unit.StopMoving();
+                    state = State.Idling;
+                }
                 break;
             #endregion
         }

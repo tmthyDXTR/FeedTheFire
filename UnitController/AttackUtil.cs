@@ -61,7 +61,7 @@ public class AttackUtil : MonoBehaviour
         Debug.Log("Cast Attack");
         // Instantiate the projectile/spell prefab
         GameObject _spell = Instantiate(Resources.Load("FireBall"),
-            this.transform.position + new Vector3(0, 0.5f, 0),
+            this.transform.position + new Vector3(0, 0.5f, 0) + transform.forward * 1,
             Quaternion.identity,
             GameObject.Find("Projectiles").transform) as GameObject;
         Projectile _projectile = _spell.GetComponent<Projectile>();
@@ -92,7 +92,22 @@ public class AttackUtil : MonoBehaviour
 
     public bool CheckAttackTargetInRange()
     {
-        return inAttackRange.Contains(attackTarget);
+        RaycastHit hit;
+        // Debug vision ray from unit to attack target
+        var dir = (attackTarget.transform.position - this.transform.position);
+        Debug.DrawRay(transform.position, dir);
+        // Cast a ray from unit to attack target
+        if (Physics.Raycast(transform.position + transform.forward * 0.25f, (attackTarget.transform.position - transform.position), out hit))
+        {
+            Debug.Log(hit.transform);
+            // If the hit target is the attack target
+            if (hit.transform == attackTarget.transform && inAttackRange.Contains(attackTarget))
+            {                
+                // And the attack target is in range return true
+                return true;
+            }
+        }
+        return false;
     }
 
     public bool CheckHasAttackTarget()

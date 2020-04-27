@@ -54,15 +54,14 @@ public class SelectionManager : MonoBehaviour
     {
         if (currentSelected.Count > 0)
         {
-            Debug.Log("Deselected all current selected objects");
             foreach (GameObject obj in currentSelected)
             {
                 _selectableObject = obj.GetComponent<Selectable>();
                 _selectableObject.isSelected = false;                
             }
+            Debug.Log("Deselected all current selected objects");
         }
         currentSelected.Clear();
-        
     }
 
     public GameObject GetClickedObject()
