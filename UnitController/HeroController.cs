@@ -9,8 +9,8 @@ public class HeroController : MonoBehaviour
     private SelectionManager _select;
     private UnitUtil _unit;
     private Animator _anim;
-    private AttackUtil _attack;
-
+    private CastUtil _cast;
+    private SkillManager _skill;
 
     [SerializeField] 
     private State state;
@@ -18,7 +18,7 @@ public class HeroController : MonoBehaviour
     {
         Idling,
         Moving,
-        Attacking,
+        Casting,
         Jumping,
         Stunned,
         Dead,
@@ -35,16 +35,11 @@ public class HeroController : MonoBehaviour
         _selectable = gameObject.GetComponent<Selectable>();
         _unit = gameObject.GetComponent<UnitUtil>();
         _anim = gameObject.GetComponent<Animator>();
-        _attack = gameObject.GetComponent<AttackUtil>();
+        _cast = gameObject.GetComponent<CastUtil>();
+        _skill = gameObject.GetComponent<SkillManager>();
 
         #endregion
     }
-
-    //void Awake()
-    //{
-    //    // Reset Jump Collision Detection
-    //    _unit.SetJumpCollision(false);
-    //}
 
     void Update()
     {
@@ -57,7 +52,7 @@ public class HeroController : MonoBehaviour
         // First check if this unit is selected
         if (_selectable.isSelected)
         {   // Right click action
-            if (Input.GetMouseButtonDown(1)) 
+            if (Input.GetMouseButtonDown(1))
             {
                 // Detect right click object here
                 Debug.Log("Hero right click");
@@ -65,7 +60,7 @@ public class HeroController : MonoBehaviour
                 Vector3 clickedPos = _select.GetMousePos();
                 // If the right clicked object is not attackable
                 // If it is attackable, the check sets it as attack target
-                if (!_attack.CheckTargetAttackable(clickedObj))
+                if (!_cast.CheckTargetTargetable(clickedObj))
                 {
                     // Set the clicked position as new move target
                     _unit.SetMoveTarget(clickedPos);
@@ -79,12 +74,30 @@ public class HeroController : MonoBehaviour
                     Debug.Log("Jump");
                     _unit.SetJumpTarget(_select.GetMousePos());
                     _unit.lastPosition = this.transform.position;
-                    _attack.StopAttack();
+                    _cast.StopCast();
                     state = State.Jumping;
-                }                
+                }
             }
+
+            // Skill Selection
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                _skill.SelectSkill(1);
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                _skill.SelectSkill(2);
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                _skill.SelectSkill(3);
+            }
+            if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                _skill.SelectSkill(4);
+            }
+            #endregion
         }
-        #endregion
 
         // State Machine
         switch (state)
@@ -97,14 +110,14 @@ public class HeroController : MonoBehaviour
                     _unit.MoveToTarget();
                     state = State.Moving;
                 }
-                // If unit has an attack target                
-                if (_attack.CheckHasAttackTarget())
+                // If unit has an cast target                
+                if (_cast.CheckHasTarget())
                 {
-                    // and it is in attack range
-                    if (_attack.CheckAttackTargetInRange())
+                    // and it is in casting range
+                    if (_cast.CheckTargetInRange())
                     {
-                        _attack.Attack();
-                        state = State.Attacking;
+                        _cast.StartCast();
+                        state = State.Casting;
                     }
                     // If it is not in range, move towards it
                     else
@@ -126,55 +139,54 @@ public class HeroController : MonoBehaviour
                     _unit.StopMoving();
                     state = State.Idling;
                 }
-                // If unit has an attack target                
-                if (_attack.CheckHasAttackTarget())
+                // If unit has an cast target                
+                if (_cast.CheckHasTarget())
                 {
-                    // and it is in attack range
-                    if (_attack.CheckAttackTargetInRange())
+                    // and it is in casting range
+                    if (_cast.CheckTargetInRange())
                     {
                         _unit.StopMoving();
-                        _attack.Attack();
-                        state = State.Attacking;
+                        _cast.StartCast();
+                        state = State.Casting;
                     }
                     // If it not in range, keep moving towards it
                     else
                     {
-                        _unit.SetMoveTarget(_attack.attackTarget.transform.position);
+                        _unit.SetMoveTarget(_cast.castTarget.transform.position);
                     }
                 }
                 break;
             #endregion
 
 
-            #region State Attacking
-            case State.Attacking:
-                // If unit has an attack target              
-                if (_attack.CheckHasAttackTarget())
+            #region State Casting
+            case State.Casting:
+                // If unit has an cast target              
+                if (_cast.CheckHasTarget())
                 {
-                    // and it is in attack range
-                    if (_attack.CheckAttackTargetInRange())
+                    // and it is in casting range
+                    if (_cast.CheckTargetInRange())
                     {
-                        // Start attacking
-                        this.transform.LookAt(_attack.attackTarget.transform);
-                        StartCoroutine(_attack.Attack());
+                        // Start casting
+                        this.transform.LookAt(_cast.castTarget.transform);
+                        StartCoroutine(_cast.StartCast());
                     }
                     // If it not in range, keep moving towards it
                     else
                     {
-                        _unit.SetMoveTarget(_attack.attackTarget.transform.position);
                         state = State.Moving;
                     }
                 }
                 // If unit has move target
                 else if (_unit.CheckHasMoveTarget())
                 {
-                    _attack.StopAttack();
+                    _cast.StopCast();
                     state = State.Moving;
                 }
-                // If unit has no attack and move target
+                // If unit has no cast and move target
                 else
                 {
-                    _attack.StopAttack();
+                    _cast.StopCast();
                     state = State.Idling;
                 }
                 break;

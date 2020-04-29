@@ -9,10 +9,11 @@ public class HitBox : MonoBehaviour
     {
         if (other.tag == "Projectile")
         {
-            var projectile = other.gameObject.GetComponent<Projectile>();
-            Debug.Log(this.transform.parent.name + " hit by " + other.name + " for " + projectile.baseDamage);
+            var _effect = other.transform.parent.gameObject.GetComponent<Effect>();
+            var _projectile = other.transform.parent.gameObject.GetComponent<ProjectileController>();
+            Debug.Log(this.transform.parent.name + " hit by " + _effect.name + " for " + _projectile.damage);
 
-            Destroy(other.gameObject);
+            Destroy(other.transform.parent.gameObject);
         }
     }
 }

@@ -44,7 +44,7 @@ public class UnitUtil : MonoBehaviour
         moveTarget = Vector3.zero;
         jumpTarget = Vector3.zero;
         _anim.SetBool("IsMoving", false);
-        _anim.SetBool("IsAttacking", false);
+        _anim.SetBool("isCasting", false);
         _anim.SetBool("IsJumping", false);
     }
 
@@ -52,7 +52,7 @@ public class UnitUtil : MonoBehaviour
     {
         _navAgent.SetDestination(moveTarget);
         _anim.SetBool("IsMoving", true);
-        _anim.SetBool("IsAttacking", false);
+        _anim.SetBool("isCasting", false);
         _anim.SetBool("IsJumping", false);
     }
 
@@ -71,7 +71,7 @@ public class UnitUtil : MonoBehaviour
         var jumpDirection = (mousePos - new Vector3(transform.position.x, 0, transform.position.z)).normalized;
         jumpTarget = this.transform.position + jumpDirection * jumpDistance;
         _anim.SetBool("IsMoving", false);
-        _anim.SetBool("IsAttacking", false);
+        _anim.SetBool("isCasting", false);
         _anim.SetBool("IsJumping", true);
     }
 

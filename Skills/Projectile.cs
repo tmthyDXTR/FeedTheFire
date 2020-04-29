@@ -2,21 +2,20 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Projectile : MonoBehaviour
+[CreateAssetMenu(fileName = "New Projectile", menuName = "New Effect/New Projectile")]
+public class Projectile : ScriptableObject
 {
-    public float baseDamage;
-    public float speed = 10;
-    public Vector3 targetDir = Vector3.zero;
-    public GameObject targetObj = null;
+    public Sprite icon;
+    public GameObject projectilePrefab;
 
-    void Update()
-    {
-        // Move our position a step closer to the target.
-        float step = speed * Time.deltaTime; // calculate distance to move
-        
-        if (targetObj != null)
-        {
-            transform.position = Vector3.MoveTowards(transform.position, targetObj.transform.position, step);
-        }
-    }
+
+
+    // Projectile Stats
+    public string name;
+    public float damage;
+    public float range;
+    public float speed;
+    public Effect.Origin origin;
+    public Effect.Target target;
+    public Effect.Type type;
 }
