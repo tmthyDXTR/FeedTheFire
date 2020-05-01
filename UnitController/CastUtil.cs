@@ -5,21 +5,35 @@ using UnityEngine;
 public class CastUtil : MonoBehaviour
 {
     #region Variables
-    private SelectionManager _select;
     private SphereCollider _castRangeColl;
     private Animator _anim;
     private SkillManager _skill;
 
 
-
+    /// <summary>
+    /// Casting Stats of the casting unit
+    /// </summary>
+    /// 
     [SerializeField]
-    private float castRangeRadius = 7f;
+    private float spellPower = 1f;
+    [SerializeField]
+    private float projectileCastRange = 7f;
+    [SerializeField]
+    private float projectileSpeed = 10f;
+    [SerializeField]
+    private float areaCastRange = 7f;
     [SerializeField]
     private bool isWaitingForCoolDown = false;
     [SerializeField]
     private float globalCoolDown = 1.5f;
+
+
+    
+
+
     public List<GameObject> inCastRange = new List<GameObject>();
     public GameObject castTarget;
+    public Vector3 castDir;
 
     public enum CastPhase
     {
@@ -33,14 +47,13 @@ public class CastUtil : MonoBehaviour
     void Start()
     {
         #region References
-        _select = GameObject.Find("SelectionManager").GetComponent<SelectionManager>();
         _castRangeColl = GameObject.Find("CastRange").GetComponent<SphereCollider>();
         _anim = gameObject.GetComponent<Animator>();
         _skill = gameObject.GetComponent<SkillManager>();
 
         #endregion
 
-        _castRangeColl.radius = castRangeRadius;
+        _castRangeColl.radius = projectileCastRange;
     }
 
     public IEnumerator StartCast()
@@ -60,64 +73,62 @@ public class CastUtil : MonoBehaviour
 
     public void EarlyCast()
     {
-        // Frame in animation where instant / early effect is
+        // Frame in animation where instant / early spell is
         // actually delivered
         if (CheckHasTarget() && CheckTargetInRange())
         {
             castPhase = CastPhase.Early;
-            CastEffect(castPhase);
+            CastSpell(castPhase);
         }
     }
 
     public void MidCast()
     {   
-        // Frame in animation where main / middle effect is
+        // Frame in animation where main / middle spell is
         // actually delivered
         if (CheckHasTarget() && CheckTargetInRange())
         {
             castPhase = CastPhase.Mid;
-            CastEffect(castPhase);
+            CastSpell(castPhase);
         }
     }
 
     public void LateCast()
     {
-        // Frame in animation where slow / late effect is
-        // actually delivered
+        // Frame in animation where slow / late spell is
+        // actually deliveredEffect
         if (CheckHasTarget() && CheckTargetInRange())
         {
             castPhase = CastPhase.Late;
-            CastEffect(castPhase);
+            CastSpell(castPhase);
         }
     }
 
-    public void CastEffect(CastPhase phase)
+    public void CastSpell(CastPhase phase)
     {
-        Effect _effect = _skill.GetEffect(phase);
+        SpellUtil _spell = _skill.GetSpell(phase);
 
-        if (_effect != null)
+        if (_spell != null)
         {
             Vector3 spellOrigin = Vector3.zero;
-            // Get the origin position of the effect
-            if (_effect.origin == Effect.Origin.Caster)
+            // Get the origin position of the spell
+            if (_spell.spell.origin == Spell.Origin.Caster)
             {
                 spellOrigin = this.transform.position + new Vector3(0, 3, 0);
             }
+            if (_spell.spell.origin == Spell.Origin.Sky)
+            {
+                spellOrigin = castTarget.transform.position + new Vector3(0, 7, 0);
+            }
 
-            Debug.Log("Cast " + castPhase + " Effect");
+            Debug.Log("Cast " + castPhase + " Spell");
             // Instantiate the projectile/spell prefab
-            GameObject spell = Instantiate(Resources.Load(_effect.name),
+            GameObject spell = Instantiate(Resources.Load(_spell.name),
                 spellOrigin,
                 Quaternion.identity,
-                GameObject.Find("Effects").transform) as GameObject;
+                GameObject.Find("Spells").transform) as GameObject;
 
-            // Get the target position of the spell
-            if (_effect.target == Effect.Target.Enemy)
-            {
-                ProjectileController _projectile = spell.GetComponent<ProjectileController>();
-                // Give the Projectile a target obj or direction
-                _projectile.targetObj = castTarget;
-            }
+            _spell._caster = this.gameObject;
         }        
     }
 
@@ -126,6 +137,7 @@ public class CastUtil : MonoBehaviour
         Debug.Log("Stop Cast");
         _anim.SetBool("isCasting", false);
         castTarget = null;
+        castDir = Vector3.zero;
     }
 
     public bool CheckTargetTargetable(GameObject obj)
@@ -165,5 +177,24 @@ public class CastUtil : MonoBehaviour
     public bool CheckHasTarget()
     {
         return castTarget != null;
+    }
+
+
+
+    // Calculates the current projectile cast Range
+    public float GetProjectileRange()
+    {
+        return projectileCastRange;
+    }
+
+    // Calculates the current projectile speed
+    public float GetProjectileSpeed()
+    {
+        return projectileSpeed;
+    }
+
+    public float GetSpellPower()
+    {
+        return spellPower;
     }
 }

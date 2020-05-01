@@ -23,6 +23,8 @@ public class HeroController : MonoBehaviour
         Stunned,
         Dead,
     }
+    [SerializeField]
+    private bool isAiming = false;
 
     #endregion
 
@@ -66,6 +68,14 @@ public class HeroController : MonoBehaviour
                     _unit.SetMoveTarget(clickedPos);
                 }
             }
+
+            // If a spell is selected that needs aiming / Spell.Aim.Directional/Point
+            if (isAiming)
+            {
+
+            }
+
+
             // Space key action
             if (Input.GetKeyDown(KeyCode.Space))
             {

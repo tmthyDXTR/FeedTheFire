@@ -2,14 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "New Skill", menuName = "Create Skill from Effects")]
+[CreateAssetMenu(fileName = "New Skill", menuName = "Create Skill from Spells")]
 
 public class Skill : ScriptableObject
 {
     public Sprite icon;
     public string name;
 
-    public GameObject earlyEffect;
-    public GameObject mediumEffect;
-    public GameObject lateEffect;
+    public GameObject earlySpell;
+    public GameObject mediumSpell;
+    public GameObject lateSpell;
 }

@@ -2,51 +2,36 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Effect : MonoBehaviour
+[CreateAssetMenu(fileName = "New Effect", menuName = "New Effect")]
+public class Effect : ScriptableObject
 {
-    private ProjectileController projectile;
+    public string name;
+    public string description;
 
-    public enum Origin
-    {
-        Caster,
-        Sky,
-        ClosestFire,
-    }
-    public enum Target
-    {
-        Caster,
-        Enemy,
-        Friend,
-        Direction,
-        Ground,
-    }
-    public enum CastType
-    {
-        Projectile,
-        Area,
-    }
+
+    public Type type;
+    public Duration duration;
+    public float timer;
+    public Strength strength;
 
     public enum Type
     {
-        Damage,
-        Buff,
-        Debuff,
+        Fire,
+        Shadow,
     }
-
-
-    public Origin origin;
-    public Target target;
-    public CastType castType;
-    public Type type;
-
-
-    void Start()
+    public enum Duration
     {
-        projectile = GetComponent<ProjectileController>();
-
-        if (projectile != null)
-        {
-
-        }
+        Instant,
+        OverTime,
     }
+
+    public enum Strength
+    {
+        VeryWeak,
+        Weak,
+        Mid,
+        Strong,
+        VeryStrong,
+    }
+
 }

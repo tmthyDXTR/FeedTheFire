@@ -7,13 +7,12 @@ public class HitBox : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.tag == "Projectile")
+        if (other.tag == "Fire")
         {
-            var _effect = other.transform.parent.gameObject.GetComponent<Effect>();
-            var _projectile = other.transform.parent.gameObject.GetComponent<ProjectileController>();
-            Debug.Log(this.transform.parent.name + " hit by " + _effect.name + " for " + _projectile.damage);
+            var _spell = other.gameObject.GetComponent<SpellUtil>();
+            Debug.Log(this.transform.parent.name + " hit by " + _spell.name + " for " + _spell.power);
 
-            Destroy(other.transform.parent.gameObject);
+            Destroy(other.gameObject);
         }
     }
 }

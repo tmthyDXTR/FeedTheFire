@@ -14,18 +14,18 @@ public class SkillManager : MonoBehaviour
     public Skill selectedSkill;
 
     [SerializeField]
-    private Effect earlyEffect;
+    private SpellUtil earlySpell;
     [SerializeField]
-    private Effect midEffect;
+    private SpellUtil midSpell;
     [SerializeField]
-    private Effect lateEffect;
+    private SpellUtil lateSpell;
 
 
     [SerializeField]
     private List<Skill> activeSkills;
 
     [SerializeField]
-    private List<Projectile> projectiles;
+    private List<Spell> spells;
 
 
     #endregion
@@ -39,17 +39,17 @@ public class SkillManager : MonoBehaviour
         SelectSkill(0);
     }
 
-    public Effect GetEffect(CastUtil.CastPhase phase)
+    public SpellUtil GetSpell(CastUtil.CastPhase phase)
     {
-        Effect effect = null;
+        SpellUtil spell = null;
         if (phase == CastUtil.CastPhase.Early)
-            effect = earlyEffect;
+            spell = earlySpell;
         if (phase == CastUtil.CastPhase.Mid)
-            effect = midEffect;
+            spell = midSpell;
         if (phase == CastUtil.CastPhase.Late)
-            effect = lateEffect;
+            spell = lateSpell;
 
-        return effect;
+        return spell;
     }
 
     public void SelectSkill(int slot)
@@ -57,28 +57,28 @@ public class SkillManager : MonoBehaviour
         if (slot < activeSkills.Count)
         {
             selectedSkill = activeSkills[slot];
-            LoadSkillEffects();
+            LoadSkillSpells();
             Debug.Log("Selected: " + selectedSkill);
         }
         Debug.Log("Selected Skill: " + slot);
     }
 
-    private void LoadSkillEffects()
+    private void LoadSkillSpells()
     {        
-        // Loads the effect scripts of the selected skill
+        // Loads the spell scripts of the selected skill
         if (selectedSkill != null)
         {
-            if (selectedSkill.earlyEffect != null)
+            if (selectedSkill.earlySpell != null)
             {
-                earlyEffect = selectedSkill.earlyEffect.GetComponent<Effect>();
+                earlySpell = selectedSkill.earlySpell.GetComponent<SpellUtil>();
             }
-            if (selectedSkill.mediumEffect != null)
+            if (selectedSkill.mediumSpell != null)
             {
-                midEffect = selectedSkill.mediumEffect.GetComponent<Effect>();
+                midSpell = selectedSkill.mediumSpell.GetComponent<SpellUtil>();
             }
-            if (selectedSkill.lateEffect != null)
+            if (selectedSkill.lateSpell != null)
             {
-                lateEffect = selectedSkill.lateEffect.GetComponent<Effect>();
+                lateSpell = selectedSkill.lateSpell.GetComponent<SpellUtil>();
             }
         }        
     }
