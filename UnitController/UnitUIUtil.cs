@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MiscUtil : MonoBehaviour
+public class UnitUIUtil : MonoBehaviour
 {
     private SelectionManager _select;
 
@@ -21,10 +21,7 @@ public class MiscUtil : MonoBehaviour
 
     void Update()
     {
-        if (drawSpellArrow)
-        {
-            DrawArrow(new Vector3(this.transform.position.x, 0.1f, this.transform.position.z), _select.GetMousePos());
-        }
+
     }
 
     public void DrawArrow(Vector3 start, Vector3 end)
@@ -58,5 +55,13 @@ public class MiscUtil : MonoBehaviour
             arrowBody.transform.LookAt(this.transform);
             arrowBody.transform.GetChild(0).localScale = new Vector3(0.15f, startScale * (dist - 0.25f), 0);
         }               
+    }
+
+    public void RemoveArrow()
+    {
+        if (arrowBody != null)
+            GameObject.Destroy(arrowBody);
+        if (arrowCap != null)
+            GameObject.Destroy(arrowCap);
     }
 }

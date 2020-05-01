@@ -10,7 +10,8 @@ public class HeroController : MonoBehaviour
     private UnitUtil _unit;
     private Animator _anim;
     private CastUtil _cast;
-    private SkillManager _skill;
+    private SpellManager _spell;
+    private UnitUIUtil _ui;
 
     [SerializeField] 
     private State state;
@@ -23,8 +24,6 @@ public class HeroController : MonoBehaviour
         Stunned,
         Dead,
     }
-    [SerializeField]
-    private bool isAiming = false;
 
     #endregion
 
@@ -38,7 +37,8 @@ public class HeroController : MonoBehaviour
         _unit = gameObject.GetComponent<UnitUtil>();
         _anim = gameObject.GetComponent<Animator>();
         _cast = gameObject.GetComponent<CastUtil>();
-        _skill = gameObject.GetComponent<SkillManager>();
+        _spell = gameObject.GetComponent<SpellManager>();
+        _ui = gameObject.GetComponent<UnitUIUtil>();
 
         #endregion
     }
@@ -53,16 +53,25 @@ public class HeroController : MonoBehaviour
         #region Input handler
         // First check if this unit is selected
         if (_selectable.isSelected)
-        {   // Right click action
+        {   // On Right click action
             if (Input.GetMouseButtonDown(1))
             {
-                // Detect right click object here
+                // Detect right click target here
                 Debug.Log("Hero right click");
                 GameObject clickedObj = _select.GetClickedObject();
                 Vector3 clickedPos = _select.GetMousePos();
-                // If the right clicked object is not attackable
-                // If it is attackable, the check sets it as attack target
-                if (!_cast.CheckTargetTargetable(clickedObj))
+                // If the right clicked object is not targetable
+                // If it is targetable, the check sets it as target object
+                if (_cast.CheckTargetTargetable(clickedObj, _spell.GetSelectedSpell()))
+                {
+                    if (_spell.IsSpellSelected())
+                    {
+                        //Select RClick action
+                        _select.SetSelectManagerActive(true);
+                        _spell.SelectSpell(0);
+                    }                       
+                }
+                else
                 {
                     // Set the clicked position as new move target
                     _unit.SetMoveTarget(clickedPos);
@@ -70,9 +79,53 @@ public class HeroController : MonoBehaviour
             }
 
             // If a spell is selected that needs aiming / Spell.Aim.Directional/Point
-            if (isAiming)
+            if (_spell.IsSpellSelected())
             {
+                // Deactivate the left click selection of objects and unit deselection
+                if (_select.isActive)
+                {
+                    _select.SetSelectManagerActive(false);
+                    _cast.StopCast();
+                }
+                else
+                {
+                    // On Left click action
+                    if (Input.GetMouseButtonDown(0))
+                    {
+                        // Detect left click target here
+                        Debug.Log("Hero left click");
+                        GameObject clickedObj = _select.GetClickedObject();
+                        Debug.Log(clickedObj);
+                        Vector3 clickedPos = _select.GetMousePos();
 
+                        // If the left click target is in range                                             
+                        
+                        // Check what target info the spell needs
+                        // Directional or object position
+                        Spell spell = _spell.GetSelectedSpell();
+                        
+                        // Check if spell needs a target object
+                        if (spell.form.aim == Form.Aim.Auto)
+                        {
+                            // If it is targetable, the check sets it as target object
+                            if (_cast.CheckTargetTargetable(clickedObj, spell))
+                            {
+                                Debug.Log("Cast Auto Target Spell");
+                                // Select RClick again
+                                //_spell.SelectSpell(0);
+                                //_cast.StopCast();
+                            }
+                            else
+                            {
+                                Debug.Log("Not Targetable");
+                            }
+                        }
+                        else
+                        {
+                            Debug.Log("Cast Directional/Point Spell");
+                        }
+                    }
+                }
             }
 
 
@@ -89,22 +142,30 @@ public class HeroController : MonoBehaviour
                 }
             }
 
-            // Skill Selection
+            // Spell Selection
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
-                _skill.SelectSkill(1);
+                _spell.SelectSpell(1);
             }
             if (Input.GetKeyDown(KeyCode.Alpha2))
             {
-                _skill.SelectSkill(2);
+                _spell.SelectSpell(2);
             }
             if (Input.GetKeyDown(KeyCode.Alpha3))
             {
-                _skill.SelectSkill(3);
+                _spell.SelectSpell(3);
             }
             if (Input.GetKeyDown(KeyCode.Alpha4))
             {
-                _skill.SelectSkill(4);
+                _spell.SelectSpell(4);
+            }
+
+
+            // ESC Key
+            if (Input.GetKeyDown(KeyCode.Escape))
+            {
+                _select.SetSelectManagerActive(true);
+                _spell.SelectSpell(0);
             }
             #endregion
         }

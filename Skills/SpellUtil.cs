@@ -6,11 +6,11 @@ public class SpellUtil : MonoBehaviour
 {
     #region Variables
     [SerializeField]
-    public Spell spell;
+    public Form form;
     [SerializeField]
     public Effect effect;
 
-    public GameObject _caster;
+    public GameObject caster;
     private CastUtil _cast;
 
     [SerializeField] 
@@ -20,18 +20,18 @@ public class SpellUtil : MonoBehaviour
 
     void Start()
     {
-        this.gameObject.name = spell.name;
-        _cast = _caster.GetComponent<CastUtil>();
+        this.gameObject.name = form.name;
+        _cast = caster.GetComponent<CastUtil>();
 
-        SetSpellForm(spell.form);
+        SetSpellForm(form.type);
         LoadSpellGfx();
         power = SpellPowerAdjust(_cast.GetSpellPower());
     }
 
 
-    public void SetSpellForm(Spell.Form form)
+    public void SetSpellForm(Form.Type form)
     {
-        if (form == Spell.Form.Projectile)
+        if (form == Form.Type.Projectile)
         {
             // Add Projectile Scripts and Objects to
             // the spell gameobject
@@ -41,7 +41,7 @@ public class SpellUtil : MonoBehaviour
             collider.isTrigger = true;
             AdjustProjectile(_cast.GetProjectileRange(), _cast.GetProjectileSpeed());
         }
-        if (form == Spell.Form.Area)
+        if (form == Form.Type.Area)
         {
             // Add Area Scripts and Objects to
             // the spell gameobject
@@ -52,6 +52,7 @@ public class SpellUtil : MonoBehaviour
     public void LoadSpellGfx()
     {
         GameObject gfxObj = null;
+        // Gfx Prefab Files should look like "Gfx_Fire_Projectile"
         string gfxStringFileName = "Gfx_";
 
         if (effect.type == Effect.Type.Fire)
@@ -59,12 +60,12 @@ public class SpellUtil : MonoBehaviour
             this.gameObject.tag = "Fire";
             gfxStringFileName += "Fire_";
             // Add Fire Projectile GFX Prefab
-            if (spell.form == Spell.Form.Projectile)
+            if (form.type == Form.Type.Projectile)
             {
                 gfxStringFileName += "Projectile";
             }
             // Add Fire Area GFX Prefab
-            if (spell.form == Spell.Form.Area)
+            if (form.type == Form.Type.Area)
             {
                 gfxStringFileName += "Area";
             }
@@ -74,12 +75,12 @@ public class SpellUtil : MonoBehaviour
             this.gameObject.tag = "Shadow";
             gfxStringFileName += "Shadow_";
             // Add Shadow Projectile GFX Prefab
-            if (spell.form == Spell.Form.Projectile)
+            if (form.type == Form.Type.Projectile)
             {
                 gfxStringFileName += "Projectile";
             }
             // Add Shadow Area GFX Prefab
-            if (spell.form == Spell.Form.Area)
+            if (form.type == Form.Type.Area)
             {
                 gfxStringFileName += "Area";
             }
@@ -95,11 +96,11 @@ public class SpellUtil : MonoBehaviour
     public void AdjustProjectile(float range, float speed)
     {
         var _projectile = gameObject.GetComponent<ProjectileController>();
-        if (spell.aim == Spell.Aim.Auto)
+        if (form.aim == Form.Aim.Auto)
         {
             _projectile.targetObj = _cast.castTarget;
         }
-        if (spell.aim == Spell.Aim.Directional)
+        if (form.aim == Form.Aim.Directional)
         {
             _projectile.targetDir = _cast.castDir;
         }
@@ -112,23 +113,23 @@ public class SpellUtil : MonoBehaviour
     private float QuicknessAdjust(float baseSpeed)
     {
         var spellAdjustedSpeed = baseSpeed;
-        if (spell.quickness == Spell.Quickness.VerySlow)
+        if (form.quickness == Form.Quickness.VerySlow)
         {
             spellAdjustedSpeed *= 0.33f;
         }
-        if (spell.quickness == Spell.Quickness.Slow)
+        if (form.quickness == Form.Quickness.Slow)
         {
             spellAdjustedSpeed *= 0.66f;
         }
-        if (spell.quickness == Spell.Quickness.Mid)
+        if (form.quickness == Form.Quickness.Mid)
         {
             // standard base speed
         }
-        if (spell.quickness == Spell.Quickness.Fast)
+        if (form.quickness == Form.Quickness.Fast)
         {
             spellAdjustedSpeed *= 1.33f;
         }
-        if (spell.quickness == Spell.Quickness.VeryFast)
+        if (form.quickness == Form.Quickness.VeryFast)
         {
             spellAdjustedSpeed *= 1.66f;
         }

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fddc0a4fd170f9742bf279a6c0326779, type: 3}
+  m_Name: Spell_RClick_FireBall
+  m_EditorClassIdentifier: 
+  icon: {fileID: 0}
+  name: 
+  description: 
+  form: {fileID: 11400000, guid: 27da8a68291eecc4ea9b88db8c94aac1, type: 2}
+  effect: {fileID: 11400000, guid: 7300f54d6b344ae49b5c09218e757f73, type: 2}

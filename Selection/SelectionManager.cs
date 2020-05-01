@@ -4,38 +4,53 @@ using UnityEngine;
 
 public class SelectionManager : MonoBehaviour
 {
+    /// <summary>
+    /// This class handles the selection through input
+    /// </summary>
+    #region Variables
+    [SerializeField]
+    public bool isActive = true;
     public List<GameObject> currentSelected = new List<GameObject>();
     
     private Selectable _selectableObject;
 
-    void Start()
-    {
-        
-    }
+    #endregion
+
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (isActive)
         {
-            var clickedObj = GetClickedObject();
-            Debug.Log("Clicked on " + clickedObj);
-
-            // Check if Hit Box collider clicked
-            if (clickedObj.name == "HitBox")
+            if (Input.GetMouseButtonDown(0))
             {
-                Select(clickedObj.transform.parent.gameObject);
-            }
+                var clickedObj = GetClickedObject();
+                Debug.Log("Clicked on " + clickedObj);
 
-            // If left clicked on not selectable / ground / other things
-            // deselect everything
-            else
-            {
-                DeselectAll();
+                // Check if Hit Box collider clicked
+                if (clickedObj.name == "HitBox")
+                {
+                    Select(clickedObj.transform.parent.gameObject);
+                }
+
+                // If left clicked on not selectable / ground / other things
+                // deselect everything
+                else
+                {
+                    DeselectAll();
+                }
             }
-        }
+        }        
     }
 
+    public void SetSelectManagerActive(bool value)
+    {
+        isActive = value;
+        if (isActive)
+            Debug.Log("Selection Manager activated");
+        else
+            Debug.Log("Selection Manager deactivated");
+    }
 
 
     private void Select(GameObject obj)
@@ -68,14 +83,15 @@ public class SelectionManager : MonoBehaviour
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
+        GameObject clickedObj = null;
         if (Physics.Raycast(ray, out hit))
         {
             if (hit.collider != null)
             {
-                return hit.collider.gameObject;
+                clickedObj = hit.collider.gameObject;
             }
         }
-        return null;
+        return clickedObj;
     }
 
     public Vector3 GetMousePos()

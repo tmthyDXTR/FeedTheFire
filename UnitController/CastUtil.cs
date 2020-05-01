@@ -7,7 +7,7 @@ public class CastUtil : MonoBehaviour
     #region Variables
     private SphereCollider _castRangeColl;
     private Animator _anim;
-    private SkillManager _skill;
+    private SpellManager _spell;
 
 
     /// <summary>
@@ -28,20 +28,9 @@ public class CastUtil : MonoBehaviour
     private float globalCoolDown = 1.5f;
 
 
-    
-
-
     public List<GameObject> inCastRange = new List<GameObject>();
     public GameObject castTarget;
     public Vector3 castDir;
-
-    public enum CastPhase
-    {
-        Early,
-        Mid,
-        Late,
-    }
-    public CastPhase castPhase;
 
     #endregion
     void Start()
@@ -49,7 +38,7 @@ public class CastUtil : MonoBehaviour
         #region References
         _castRangeColl = GameObject.Find("CastRange").GetComponent<SphereCollider>();
         _anim = gameObject.GetComponent<Animator>();
-        _skill = gameObject.GetComponent<SkillManager>();
+        _spell = gameObject.GetComponent<SpellManager>();
 
         #endregion
 
@@ -71,65 +60,61 @@ public class CastUtil : MonoBehaviour
         }
     }          
 
-    public void EarlyCast()
-    {
-        // Frame in animation where instant / early spell is
-        // actually delivered
-        if (CheckHasTarget() && CheckTargetInRange())
-        {
-            castPhase = CastPhase.Early;
-            CastSpell(castPhase);
-        }
-    }
 
-    public void MidCast()
+
+    public void CastFrame()
     {   
         // Frame in animation where main / middle spell is
         // actually delivered
         if (CheckHasTarget() && CheckTargetInRange())
         {
-            castPhase = CastPhase.Mid;
-            CastSpell(castPhase);
+            CastSpell(_spell.GetSelectedSpell());
         }
     }
 
-    public void LateCast()
+    public void CastSpell(Spell spell)
     {
-        // Frame in animation where slow / late spell is
-        // actually deliveredEffect
-        if (CheckHasTarget() && CheckTargetInRange())
-        {
-            castPhase = CastPhase.Late;
-            CastSpell(castPhase);
-        }
+        // Instantiate spell dummy prefab
+        GameObject spellDummy = CreateSpellDummy(spell);
+        // Set the spell properties (form and effect)
+        SetSpellProperties(spell, spellDummy);
+        _spell.SelectSpell(0);
+        Debug.Log("Cast Spell");
     }
 
-    public void CastSpell(CastPhase phase)
+    private void SetSpellProperties(Spell spell, GameObject spellDummy)
     {
-        SpellUtil _spell = _skill.GetSpell(phase);
+        // Set the spell properties (form and effect)
+        SpellUtil createdSpell = spellDummy.GetComponent<SpellUtil>();
+        createdSpell.form = spell.form;
+        createdSpell.effect = spell.effect;
+        createdSpell.caster = this.gameObject;
+    }
 
-        if (_spell != null)
+    private GameObject CreateSpellDummy(Spell spell)
+    {
+        // Instantiate spell dummy prefab
+        return Instantiate(Resources.Load("NewSpell"),
+            GetSpellOriginVector(spell.form.origin),
+            Quaternion.identity,
+            GameObject.Find("Spells").transform) as GameObject;
+    }
+
+    private Vector3 GetSpellOriginVector(Form.Origin origin)
+    {
+        // Gets the origin position of the spell
+
+        Vector3 spellOrigin = Vector3.zero;
+        if (origin == Form.Origin.Caster)
         {
-            Vector3 spellOrigin = Vector3.zero;
-            // Get the origin position of the spell
-            if (_spell.spell.origin == Spell.Origin.Caster)
-            {
-                spellOrigin = this.transform.position + new Vector3(0, 3, 0);
-            }
-            if (_spell.spell.origin == Spell.Origin.Sky)
-            {
-                spellOrigin = castTarget.transform.position + new Vector3(0, 7, 0);
-            }
+            spellOrigin = this.transform.position + new Vector3(0, 3, 0);
+        }
+        if (origin == Form.Origin.Sky)
+        {
+            spellOrigin = castTarget.transform.position + new Vector3(0, 7, 0);
+        }
 
-            Debug.Log("Cast " + castPhase + " Spell");
-            // Instantiate the projectile/spell prefab
-            GameObject spell = Instantiate(Resources.Load(_spell.name),
-                spellOrigin,
-                Quaternion.identity,
-                GameObject.Find("Spells").transform) as GameObject;
-
-            _spell._caster = this.gameObject;
-        }        
+        return spellOrigin;
     }
 
     public void StopCast()
@@ -140,18 +125,40 @@ public class CastUtil : MonoBehaviour
         castDir = Vector3.zero;
     }
 
-    public bool CheckTargetTargetable(GameObject obj)
+    public bool CheckTargetTargetable(GameObject target, Spell spell)
     {
-        if (obj.layer == 9) // 9 = Enemy unit
+        var isTargetable = false;
+        // Checks if the target object is targetable by the spell
+
+        if (spell.form.targetable == Form.Targetable.AllUnits)
         {
-            castTarget = obj.transform.parent.gameObject;
-            return true;
+            if (target.layer == 8 || target.layer == 9) // 8 = PlayerUnits 9 = Enemy unit
+            {
+                castTarget = target.transform.parent.gameObject;
+                isTargetable = true;
+            }
         }
-        else
+        else if (spell.form.targetable == Form.Targetable.PlayerUnits)
+        {
+            if (target.layer == 8) // 8 = PlayerUnits 9 = Enemy unit
+            {
+                castTarget = target.transform.parent.gameObject;
+                isTargetable = true;
+            }
+        }
+        else if (spell.form.targetable == Form.Targetable.EnemyUnits)
+        {
+            if (target.layer == 9) // 8 = PlayerUnits 9 = Enemy unit
+            {
+                castTarget = target.transform.parent.gameObject;
+                isTargetable = true;
+            }
+        }        
+        if (!isTargetable)
         {
             castTarget = null;
-            return false;
         }
+        return isTargetable;
     }
 
     public bool CheckTargetInRange()
@@ -176,7 +183,7 @@ public class CastUtil : MonoBehaviour
 
     public bool CheckHasTarget()
     {
-        return castTarget != null;
+        return castTarget != null || castDir != Vector3.zero;
     }
 
 
