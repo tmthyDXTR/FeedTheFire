@@ -23,30 +23,38 @@ public class SpellUtil : MonoBehaviour
         this.gameObject.name = form.name;
         _cast = caster.GetComponent<CastUtil>();
 
-        SetSpellForm(form.type);
+        SetSpellType(form.type);
         LoadSpellGfx();
         power = SpellPowerAdjust(_cast.GetSpellPower());
     }
 
 
-    public void SetSpellForm(Form.Type form)
+    public void SetSpellType(Form.Type type)
     {
-        if (form == Form.Type.Projectile)
+        if (type == Form.Type.Projectile)
         {
             // Add Projectile Scripts and Objects to
             // the spell gameobject
             this.gameObject.AddComponent<ProjectileController>();
-            var collider = this.gameObject.AddComponent<SphereCollider>();
-            collider.radius = 0.5f;
-            collider.isTrigger = true;
+            StartCoroutine(CreateCollider());
             AdjustProjectile(_cast.GetProjectileRange(), _cast.GetProjectileSpeed());
         }
-        if (form == Form.Type.Area)
+        if (type == Form.Type.Area)
         {
             // Add Area Scripts and Objects to
             // the spell gameobject
             this.gameObject.AddComponent<AreaController>();
         }
+    }
+
+    private IEnumerator CreateCollider()
+    {
+        Debug.Log("Wait for Collider creation");
+        yield return new WaitForSeconds(0.1f);
+        var collider = this.gameObject.AddComponent<SphereCollider>();
+        collider.radius = 0.5f;
+        collider.isTrigger = true;
+        Debug.Log("Collider created");
     }
 
     public void LoadSpellGfx()
@@ -100,7 +108,7 @@ public class SpellUtil : MonoBehaviour
         {
             _projectile.targetObj = _cast.castTarget;
         }
-        if (form.aim == Form.Aim.Directional)
+        if (form.aim == Form.Aim.Directional || form.aim == Form.Aim.Point)
         {
             _projectile.targetDir = _cast.castDir;
         }

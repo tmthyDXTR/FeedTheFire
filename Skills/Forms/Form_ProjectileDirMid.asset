@@ -16,4 +16,4 @@ MonoBehaviour:
   targetable: 2
   type: 0
   aim: 0
-  quickness: 2
+  quickness: 3

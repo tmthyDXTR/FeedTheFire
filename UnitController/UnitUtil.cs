@@ -44,7 +44,6 @@ public class UnitUtil : MonoBehaviour
         moveTarget = Vector3.zero;
         jumpTarget = Vector3.zero;
         _anim.SetBool("IsMoving", false);
-        _anim.SetBool("isCasting", false);
         _anim.SetBool("IsJumping", false);
     }
 

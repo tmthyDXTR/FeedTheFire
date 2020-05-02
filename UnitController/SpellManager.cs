@@ -9,9 +9,6 @@ public class SpellManager : MonoBehaviour
     // Also it holds the usable skills, that were created with the effects
     #region Variables
 
-
-    [SerializeField]
-    private bool isSpellSelected;
     [SerializeField] // Currently selected spell
     private Spell selectedSpell;
 
@@ -49,21 +46,11 @@ public class SpellManager : MonoBehaviour
 
     public void SelectSpell(int slot)
     {
-        isSpellSelected = true;
-        if (slot == 0)
-        {
-            isSpellSelected = false;
-        }
         if (slot < availableSpells.Count)
         {
             selectedSpell = availableSpells[slot];
             Debug.Log("Selected: " + selectedSpell);
         }
         Debug.Log("Selected Spell: " + slot);
-    }
-
-    public bool IsSpellSelected()
-    {
-        return isSpellSelected;
     }
 }

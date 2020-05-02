@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class HeroController : MonoBehaviour
 {
@@ -19,7 +20,9 @@ public class HeroController : MonoBehaviour
     {
         Idling,
         Moving,
+        AutoCasting,
         Casting,
+        Aiming,
         Jumping,
         Stunned,
         Dead,
@@ -41,6 +44,18 @@ public class HeroController : MonoBehaviour
         _ui = gameObject.GetComponent<UnitUIUtil>();
 
         #endregion
+
+        #region EventListener 
+        // When cast lock gets deactivated/after cast, switch to idle state,
+        // and change back to RClick spell
+        _cast.OnIsCastUnlocked += delegate (object sender, EventArgs e)
+        {
+            Debug.Log("Cast Unlocked");
+            state = State.Idling;
+            _spell.SelectSpell(0);
+        };
+
+        #endregion
     }
 
     void Update()
@@ -56,83 +71,37 @@ public class HeroController : MonoBehaviour
         {   // On Right click action
             if (Input.GetMouseButtonDown(1))
             {
-                // Detect right click target here
-                Debug.Log("Hero right click");
-                GameObject clickedObj = _select.GetClickedObject();
-                Vector3 clickedPos = _select.GetMousePos();
-                // If the right clicked object is not targetable
-                // If it is targetable, the check sets it as target object
-                if (_cast.CheckTargetTargetable(clickedObj, _spell.GetSelectedSpell()))
+                if (!_cast.IsCastLocked)
                 {
-                    if (_spell.IsSpellSelected())
+                    // Detect right click target here
+                    Debug.Log("Hero right click");
+                    GameObject clickedObj = _select.GetClickedObject();
+                    Vector3 clickedPos = _select.GetMousePos();
+                    // If the right clicked object is not targetable
+                    // If it is targetable, the check sets it as target object
+                    if (_cast.CheckTargetTargetable(clickedObj, _spell.GetSelectedSpell()))
                     {
-                        //Select RClick action
-                        _select.SetSelectManagerActive(true);
-                        _spell.SelectSpell(0);
-                    }                       
-                }
-                else
-                {
-                    // Set the clicked position as new move target
-                    _unit.SetMoveTarget(clickedPos);
-                }
-            }
-
-            // If a spell is selected that needs aiming / Spell.Aim.Directional/Point
-            if (_spell.IsSpellSelected())
-            {
-                // Deactivate the left click selection of objects and unit deselection
-                if (_select.isActive)
-                {
-                    _select.SetSelectManagerActive(false);
-                    _cast.StopCast();
-                }
-                else
-                {
-                    // On Left click action
-                    if (Input.GetMouseButtonDown(0))
-                    {
-                        // Detect left click target here
-                        Debug.Log("Hero left click");
-                        GameObject clickedObj = _select.GetClickedObject();
-                        Debug.Log(clickedObj);
-                        Vector3 clickedPos = _select.GetMousePos();
-
-                        // If the left click target is in range                                             
-                        
-                        // Check what target info the spell needs
-                        // Directional or object position
-                        Spell spell = _spell.GetSelectedSpell();
-                        
-                        // Check if spell needs a target object
-                        if (spell.form.aim == Form.Aim.Auto)
+                        if (state == State.Aiming)
                         {
-                            // If it is targetable, the check sets it as target object
-                            if (_cast.CheckTargetTargetable(clickedObj, spell))
-                            {
-                                Debug.Log("Cast Auto Target Spell");
-                                // Select RClick again
-                                //_spell.SelectSpell(0);
-                                //_cast.StopCast();
-                            }
-                            else
-                            {
-                                Debug.Log("Not Targetable");
-                            }
-                        }
-                        else
-                        {
-                            Debug.Log("Cast Directional/Point Spell");
+                            //Select RClick action
+                            _select.SetSelectManagerActive(true);
+                            _spell.SelectSpell(0);
+                            _ui.RemoveArrow();
+                            state = State.AutoCasting;
                         }
                     }
+                    else
+                    {
+                        // Set the clicked position as new move target
+                        _unit.SetMoveTarget(clickedPos);
+                    }
                 }
-            }
-
-
+            }                             
+            
             // Space key action
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                if (!state.Equals(State.Jumping))
+                if (!state.Equals(State.Jumping) && !_cast.IsCastLocked)
                 {
                     Debug.Log("Jump");
                     _unit.SetJumpTarget(_select.GetMousePos());
@@ -142,22 +111,35 @@ public class HeroController : MonoBehaviour
                 }
             }
 
+            
             // Spell Selection
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
+                _select.SetSelectManagerActive(false);
+                _cast.StopCast();
                 _spell.SelectSpell(1);
+                state = State.Aiming;
             }
             if (Input.GetKeyDown(KeyCode.Alpha2))
             {
+                _select.SetSelectManagerActive(false);
+                _cast.StopCast();
                 _spell.SelectSpell(2);
+                state = State.Aiming;
             }
             if (Input.GetKeyDown(KeyCode.Alpha3))
             {
+                _select.SetSelectManagerActive(false);
+                _cast.StopCast();
                 _spell.SelectSpell(3);
+                state = State.Aiming;
             }
             if (Input.GetKeyDown(KeyCode.Alpha4))
             {
+                _select.SetSelectManagerActive(false);
+                _cast.StopCast();
                 _spell.SelectSpell(4);
+                state = State.Aiming;
             }
 
 
@@ -187,8 +169,8 @@ public class HeroController : MonoBehaviour
                     // and it is in casting range
                     if (_cast.CheckTargetInRange())
                     {
-                        _cast.StartCast();
-                        state = State.Casting;
+                        _cast.StartCast(CastUtil.Type.AutoSpell, _spell.GetSelectedSpell());
+                        state = State.AutoCasting;
                     }
                     // If it is not in range, move towards it
                     else
@@ -217,8 +199,8 @@ public class HeroController : MonoBehaviour
                     if (_cast.CheckTargetInRange())
                     {
                         _unit.StopMoving();
-                        _cast.StartCast();
-                        state = State.Casting;
+                        _cast.StartCast(CastUtil.Type.AutoSpell, _spell.GetSelectedSpell());
+                        state = State.AutoCasting;
                     }
                     // If it not in range, keep moving towards it
                     else
@@ -230,8 +212,8 @@ public class HeroController : MonoBehaviour
             #endregion
 
 
-            #region State Casting
-            case State.Casting:
+            #region State AutoCasting
+            case State.AutoCasting:
                 // If unit has an cast target              
                 if (_cast.CheckHasTarget())
                 {
@@ -240,9 +222,13 @@ public class HeroController : MonoBehaviour
                     {
                         // Start casting
                         this.transform.LookAt(_cast.castTarget.transform);
-                        StartCoroutine(_cast.StartCast());
+                        StartCoroutine(_cast.StartCast(CastUtil.Type.AutoSpell, _spell.GetSelectedSpell()));
+                        if (!_select.isActive)
+                        {
+                            _select.SetSelectManagerActive(true);
+                        }
                     }
-                    // If it not in range, keep moving towards it
+                    // If it is not in range, keep moving towards it
                     else
                     {
                         state = State.Moving;
@@ -263,6 +249,89 @@ public class HeroController : MonoBehaviour
                 break;
             #endregion
 
+
+            #region State Aiming
+            case State.Aiming:
+                _ui.DrawArrow(new Vector3(this.transform.position.x, 0.1f, this.transform.position.z), _select.GetMousePos());
+                
+                if (_unit.CheckHasMoveTarget())
+                {
+                    _unit.MoveToTarget();
+                }
+                // If move target reached, stop moving
+                if (_unit.CheckTargetReached())
+                {
+                    _unit.StopMoving();
+                }
+
+                // On Left click action
+                if (Input.GetMouseButtonDown(0))
+                {
+                    // Detect left click target here
+                    Debug.Log("Aim Try Trigger");
+                    GameObject clickedObj = null;
+                    if (_select.GetClickedObject() != null)
+                        clickedObj = _select.GetClickedObject();                    
+                        //Debug.Log("Hit: " + clickedObj.transform.parent.gameObject.name);
+
+                    Vector3 clickedPos = _select.GetMousePos();
+                    Debug.Log("Hit Vector: " + clickedPos);
+                    // If the left click target is in range                                             
+
+                    // Check what target info the spell needs
+                    // Directional or object position
+                    Spell spell = _spell.GetSelectedSpell();
+
+                    // Check if spell needs a target object
+                    if (spell.form.aim == Form.Aim.Auto)
+                    {
+                        // If it is targetable, the check sets it as target object
+                        if (_cast.CheckTargetTargetable(clickedObj, spell))
+                        {
+                            Debug.Log("Cast Auto Target Spell");
+                            this.transform.LookAt(_cast.castTarget.transform);
+                            _unit.StopMoving();
+                            // Start casting
+                            StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, _spell.GetSelectedSpell()));
+                            state = State.Casting;
+                            _ui.RemoveArrow();
+                        }
+                        else
+                        {
+                            Debug.Log("Not Targetable");
+                        }
+                    }
+                    else if (spell.form.aim == Form.Aim.Directional || spell.form.aim == Form.Aim.Point)
+                    {
+                        Debug.Log("Cast Directional Spell");
+                        var castDir = clickedPos;
+                        _cast.castDir = castDir;
+                        this.transform.LookAt(clickedPos);
+                        _unit.StopMoving();
+                        // Start casting
+                        StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, _spell.GetSelectedSpell()));
+                        state = State.Casting;
+                        _ui.RemoveArrow();
+                    }
+                }
+
+
+                break;
+            #endregion
+
+
+            #region State Casting
+            case State.Casting:
+                // If unit has move target
+                
+                if (_unit.CheckHasMoveTarget() && !_cast.IsCastLocked)
+                {
+                    _cast.StopCast();
+                    state = State.Moving;
+                }
+
+                break;
+            #endregion
 
             #region State Jumping
             case State.Jumping:

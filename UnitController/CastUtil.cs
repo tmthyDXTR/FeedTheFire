@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 public class CastUtil : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class CastUtil : MonoBehaviour
     private SphereCollider _castRangeColl;
     private Animator _anim;
     private SpellManager _spell;
+    private UnitUtil _unit;
 
 
     /// <summary>
@@ -27,10 +29,34 @@ public class CastUtil : MonoBehaviour
     [SerializeField]
     private float globalCoolDown = 1.5f;
 
+    public EventHandler OnIsCastUnlocked;
+    [SerializeField]
+    private bool isCastLocked;
+    public bool IsCastLocked
+    {
+        get { return isCastLocked; }
+        set
+        {
+            isCastLocked = value;
+            if (value == false)
+                if (OnIsCastUnlocked != null) OnIsCastUnlocked(null, EventArgs.Empty);
+        }
+    }
+
+
+    public enum Type 
+    { 
+        AutoSpell,
+        SingleSpell,
+    }
+    [SerializeField]
+    private Type type;
 
     public List<GameObject> inCastRange = new List<GameObject>();
     public GameObject castTarget;
     public Vector3 castDir;
+    [SerializeField]
+    private Spell spell;
 
     #endregion
     void Start()
@@ -39,14 +65,26 @@ public class CastUtil : MonoBehaviour
         _castRangeColl = GameObject.Find("CastRange").GetComponent<SphereCollider>();
         _anim = gameObject.GetComponent<Animator>();
         _spell = gameObject.GetComponent<SpellManager>();
-
+        _unit = gameObject.GetComponent<UnitUtil>();
         #endregion
 
         _castRangeColl.radius = projectileCastRange;
     }
 
-    public IEnumerator StartCast()
-    {
+
+
+
+    public IEnumerator StartCast(Type type, Spell spell)
+    {        
+        this.spell = spell;
+        this.type = type;
+        // If the casted spell is not auto/rclick
+        // lock the caster movement
+        if (this.type == Type.SingleSpell)
+        {
+            IsCastLocked = true;
+        }
+
         if (!isWaitingForCoolDown)
         {
             Debug.Log("Start Cast");
@@ -63,23 +101,42 @@ public class CastUtil : MonoBehaviour
 
 
     public void CastFrame()
-    {   
+    {
         // Frame in animation where main / middle spell is
         // actually delivered
-        if (CheckHasTarget() && CheckTargetInRange())
+        if (this.type == Type.SingleSpell)
         {
-            CastSpell(_spell.GetSelectedSpell());
+            // If spell to create isn't auto, it needs a
+            // target object or target direction in cast range            
+            CreateSpell(this.spell);
+            
+        }
+        else if (this.type == Type.AutoSpell)
+        { // if auto spell / rclick, it needs a target object in range
+            if (CheckHasTarget() && CheckTargetInRange())
+            {
+                CreateSpell(this.spell);
+            }
+        }        
+    }
+
+    public void EndCast()
+    {   // Frame at the end of the animation, signaling end
+        // of cast
+        if (this.type == Type.SingleSpell)
+        {
+            IsCastLocked = false;
+            StopCast();
         }
     }
 
-    public void CastSpell(Spell spell)
+    public void CreateSpell(Spell spell)
     {
         // Instantiate spell dummy prefab
         GameObject spellDummy = CreateSpellDummy(spell);
         // Set the spell properties (form and effect)
         SetSpellProperties(spell, spellDummy);
-        _spell.SelectSpell(0);
-        Debug.Log("Cast Spell");
+        Debug.Log("Created Spell");
     }
 
     private void SetSpellProperties(Spell spell, GameObject spellDummy)
@@ -89,6 +146,7 @@ public class CastUtil : MonoBehaviour
         createdSpell.form = spell.form;
         createdSpell.effect = spell.effect;
         createdSpell.caster = this.gameObject;
+        Debug.Log("Set Spell Properties");
     }
 
     private GameObject CreateSpellDummy(Spell spell)
@@ -107,11 +165,18 @@ public class CastUtil : MonoBehaviour
         Vector3 spellOrigin = Vector3.zero;
         if (origin == Form.Origin.Caster)
         {
-            spellOrigin = this.transform.position + new Vector3(0, 3, 0);
+            spellOrigin = this.transform.position + new Vector3(0, 1f, 0) + transform.forward * 1.5f;
         }
         if (origin == Form.Origin.Sky)
         {
-            spellOrigin = castTarget.transform.position + new Vector3(0, 7, 0);
+            if (castTarget != null)
+            {
+                spellOrigin = castTarget.transform.position + new Vector3(0, 7, 0);
+            }
+            else
+            {
+                spellOrigin = castDir + new Vector3(0, 7, 0);
+            }
         }
 
         return spellOrigin;
