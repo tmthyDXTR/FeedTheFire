@@ -14,18 +14,77 @@ public class UnitUIUtil : MonoBehaviour
     private GameObject arrowCap;
     private GameObject arrowBody;
     private float startScale;
+
+    private GameObject targetArea;
+    private GameObject rangeArea;
     void Start()
     {
         _select = GameObject.Find("SelectionManager").GetComponent<SelectionManager>();
     }
 
-    void Update()
+    public void RemoveUnitDraws()
     {
+        RemoveTargetArea();
+        RemoveArrow();
+        RemoveCircleArea();
+    }
 
+    public void DrawUI(Spell spell, float range)
+    {
+        DrawCircleArea(this.transform.position, range);
+
+        if (spell.form.aim == Form.Aim.Directional)
+            DrawArrow(new Vector3(this.transform.position.x, 0.1f, this.transform.position.z), _select.GetMousePos());
+        else if (spell.form.aim == Form.Aim.Point || spell.form.aim == Form.Aim.Auto)
+            DrawTargetArea(_select.GetMousePos(), 0.5f);
+    }
+
+    public void DrawTargetArea(Vector3 position, float radius)
+    {   // Draws a circular area at target position (mousPos)
+        // indicating aim target
+        if (targetArea == null)
+        {
+            targetArea = Instantiate(Resources.Load("targetArea"),
+                position,
+                Quaternion.identity) as GameObject;
+        }
+        else
+        {
+            targetArea.transform.position = new Vector3 (position.x, 0.1f, position.z);
+            targetArea.transform.localScale = new Vector3(radius * 2, 0, radius * 2);
+        }
+    }
+
+    private void RemoveTargetArea()
+    {
+        if (targetArea != null)
+            GameObject.Destroy(targetArea);
+    }
+
+    public void DrawCircleArea(Vector3 position, float radius)
+    {   // Draws a circular area at the the target position
+        // indicating units cast range
+        if (rangeArea == null)
+        {
+            rangeArea = Instantiate(Resources.Load("rangeArea"),
+                position,
+                Quaternion.identity) as GameObject;
+        }
+        else
+        {
+            rangeArea.transform.position = new Vector3(position.x, 0.05f, position.z);
+            rangeArea.transform.localScale = new Vector3(radius*2, 0, radius*2);
+        }
+    }
+
+    private void RemoveCircleArea()
+    {
+        if (rangeArea != null)
+            GameObject.Destroy(rangeArea);
     }
 
     public void DrawArrow(Vector3 start, Vector3 end)
-    {
+    {   // Draws an arrow, indicating cast direction
         if (arrowCap == null)
         {            
             arrowCap = Instantiate(Resources.Load("arrowCap"),
@@ -57,7 +116,7 @@ public class UnitUIUtil : MonoBehaviour
         }               
     }
 
-    public void RemoveArrow()
+    private void RemoveArrow()
     {
         if (arrowBody != null)
             GameObject.Destroy(arrowBody);

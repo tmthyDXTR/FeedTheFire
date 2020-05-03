@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Form_Rclick_ProjectileAutoMid
   m_EditorClassIdentifier: 
   origin: 0
-  targetable: 2
+  targetable: 0
   type: 0
   aim: 2
   quickness: 0

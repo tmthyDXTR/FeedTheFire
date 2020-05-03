@@ -86,7 +86,7 @@ public class HeroController : MonoBehaviour
                             //Select RClick action
                             _select.SetSelectManagerActive(true);
                             _spell.SelectSpell(0);
-                            _ui.RemoveArrow();
+                            _ui.RemoveUnitDraws();
                             state = State.AutoCasting;
                         }
                     }
@@ -107,6 +107,7 @@ public class HeroController : MonoBehaviour
                     _unit.SetJumpTarget(_select.GetMousePos());
                     _unit.lastPosition = this.transform.position;
                     _cast.StopCast();
+                    _ui.RemoveUnitDraws();
                     state = State.Jumping;
                 }
             }
@@ -115,31 +116,19 @@ public class HeroController : MonoBehaviour
             // Spell Selection
             if (Input.GetKeyDown(KeyCode.Alpha1))
             {
-                _select.SetSelectManagerActive(false);
-                _cast.StopCast();
-                _spell.SelectSpell(1);
-                state = State.Aiming;
+                HeroSelectSpell(1);
             }
             if (Input.GetKeyDown(KeyCode.Alpha2))
             {
-                _select.SetSelectManagerActive(false);
-                _cast.StopCast();
-                _spell.SelectSpell(2);
-                state = State.Aiming;
+                HeroSelectSpell(2);
             }
             if (Input.GetKeyDown(KeyCode.Alpha3))
             {
-                _select.SetSelectManagerActive(false);
-                _cast.StopCast();
-                _spell.SelectSpell(3);
-                state = State.Aiming;
+                HeroSelectSpell(3);
             }
             if (Input.GetKeyDown(KeyCode.Alpha4))
             {
-                _select.SetSelectManagerActive(false);
-                _cast.StopCast();
-                _spell.SelectSpell(4);
-                state = State.Aiming;
+                HeroSelectSpell(4);
             }
 
 
@@ -167,7 +156,7 @@ public class HeroController : MonoBehaviour
                 if (_cast.CheckHasTarget())
                 {
                     // and it is in casting range
-                    if (_cast.CheckTargetInRange())
+                    if (_cast.CheckTargetInRange(_spell.GetSelectedSpell(), 0))
                     {
                         _cast.StartCast(CastUtil.Type.AutoSpell, _spell.GetSelectedSpell());
                         state = State.AutoCasting;
@@ -196,7 +185,7 @@ public class HeroController : MonoBehaviour
                 if (_cast.CheckHasTarget())
                 {
                     // and it is in casting range
-                    if (_cast.CheckTargetInRange())
+                    if (_cast.CheckTargetInRange(_spell.GetSelectedSpell(), 0))
                     {
                         _unit.StopMoving();
                         _cast.StartCast(CastUtil.Type.AutoSpell, _spell.GetSelectedSpell());
@@ -218,7 +207,7 @@ public class HeroController : MonoBehaviour
                 if (_cast.CheckHasTarget())
                 {
                     // and it is in casting range
-                    if (_cast.CheckTargetInRange())
+                    if (_cast.CheckTargetInRange(_spell.GetSelectedSpell(), 0))
                     {
                         // Start casting
                         this.transform.LookAt(_cast.castTarget.transform);
@@ -252,8 +241,7 @@ public class HeroController : MonoBehaviour
 
             #region State Aiming
             case State.Aiming:
-                _ui.DrawArrow(new Vector3(this.transform.position.x, 0.1f, this.transform.position.z), _select.GetMousePos());
-                
+                // Right click movement while aiming is still possible
                 if (_unit.CheckHasMoveTarget())
                 {
                     _unit.MoveToTarget();
@@ -264,58 +252,68 @@ public class HeroController : MonoBehaviour
                     _unit.StopMoving();
                 }
 
+                Spell spell = _spell.GetSelectedSpell();
+
+                // UI Draw / Cast range, aim indicators
+                if (spell.form.type == Form.Type.Projectile)
+                    _ui.DrawUI(spell, _cast.GetProjectileRange());
+                else
+                    _ui.DrawUI(spell, _cast.GetAreaRange());
+
+                var distanceMouse = Vector3.Distance(_unit.GetCorrectPosition(), _select.GetMousePos());
                 // On Left click action
                 if (Input.GetMouseButtonDown(0))
                 {
                     // Detect left click target here
                     Debug.Log("Aim Try Trigger");
-                    GameObject clickedObj = null;
-                    if (_select.GetClickedObject() != null)
-                        clickedObj = _select.GetClickedObject();                    
+                    if (!_cast.CheckTargetInRange(spell, distanceMouse))
+                    {
+                        Debug.Log("Out of cast range");
+                    }
+                    // If the left click target is in range                                             
+                    else
+                    {
+                        GameObject clickedObj = null;
+                        if (_select.GetClickedObject() != null)
+                            clickedObj = _select.GetClickedObject();
                         //Debug.Log("Hit: " + clickedObj.transform.parent.gameObject.name);
 
-                    Vector3 clickedPos = _select.GetMousePos();
-                    Debug.Log("Hit Vector: " + clickedPos);
-                    // If the left click target is in range                                             
+                        Vector3 clickedPos = _select.GetMousePos();
+                        Debug.Log("Hit Vector: " + clickedPos);
 
-                    // Check what target info the spell needs
-                    // Directional or object position
-                    Spell spell = _spell.GetSelectedSpell();
-
-                    // Check if spell needs a target object
-                    if (spell.form.aim == Form.Aim.Auto)
-                    {
-                        // If it is targetable, the check sets it as target object
-                        if (_cast.CheckTargetTargetable(clickedObj, spell))
+                        // Check if spell needs a target object
+                        if (spell.form.aim == Form.Aim.Auto)
                         {
-                            Debug.Log("Cast Auto Target Spell");
-                            this.transform.LookAt(_cast.castTarget.transform);
+                            // If it is targetable, the check sets it as target object
+                            if (_cast.CheckTargetTargetable(clickedObj, spell))
+                            {
+                                Debug.Log("Cast Auto Target Spell");
+                                this.transform.LookAt(_cast.castTarget.transform);
+                                _unit.StopMoving();
+                                // Start casting
+                                StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, spell));
+                                state = State.Casting;
+                                _ui.RemoveUnitDraws();
+                            }
+                            else
+                            {
+                                Debug.Log("Not Targetable");
+                            }
+                        }
+                        else if (spell.form.aim == Form.Aim.Directional || spell.form.aim == Form.Aim.Point)
+                        {
+                            Debug.Log("Cast Directional Spell");
+                            var castDir = clickedPos;
+                            _cast.castDir = castDir;
+                            this.transform.LookAt(clickedPos);
                             _unit.StopMoving();
                             // Start casting
-                            StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, _spell.GetSelectedSpell()));
+                            StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, spell));
                             state = State.Casting;
-                            _ui.RemoveArrow();
+                            _ui.RemoveUnitDraws();
                         }
-                        else
-                        {
-                            Debug.Log("Not Targetable");
-                        }
-                    }
-                    else if (spell.form.aim == Form.Aim.Directional || spell.form.aim == Form.Aim.Point)
-                    {
-                        Debug.Log("Cast Directional Spell");
-                        var castDir = clickedPos;
-                        _cast.castDir = castDir;
-                        this.transform.LookAt(clickedPos);
-                        _unit.StopMoving();
-                        // Start casting
-                        StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, _spell.GetSelectedSpell()));
-                        state = State.Casting;
-                        _ui.RemoveArrow();
                     }
                 }
-
-
                 break;
             #endregion
 
@@ -358,5 +356,15 @@ public class HeroController : MonoBehaviour
                 break;
             #endregion
         }
+    }
+
+
+    private void HeroSelectSpell(int slot)
+    {
+        _ui.RemoveUnitDraws();
+        _select.SetSelectManagerActive(false);
+        _cast.StopCast();
+        _spell.SelectSpell(slot);
+        state = State.Aiming;
     }
 }

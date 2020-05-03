@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fddc0a4fd170f9742bf279a6c0326779, type: 3}
-  m_Name: Spell_TestSpell
+  m_Name: Spell_AutoSky
   m_EditorClassIdentifier: 
   icon: {fileID: 0}
   name: TestSpell

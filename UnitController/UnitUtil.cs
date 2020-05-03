@@ -79,7 +79,7 @@ public class UnitUtil : MonoBehaviour
         this.transform.LookAt(jumpTarget);
         moveTarget = Vector3.zero;
         float step = jumpSpeed * Time.fixedDeltaTime; // calculate distance to move
-        this.transform.position = Vector3.MoveTowards(this.transform.position, jumpTarget, step);
+        this.transform.position = Vector3.MoveTowards(GetCorrectPosition(), jumpTarget, step);
     }
 
     public void SetJumpCollision(bool value)
@@ -96,7 +96,7 @@ public class UnitUtil : MonoBehaviour
     {        
         if (this.transform.position != lastPosition)
         {
-            lastPosition = this.transform.position;
+            lastPosition = GetCorrectPosition();
             return false;
         }
         else
@@ -108,20 +108,20 @@ public class UnitUtil : MonoBehaviour
     public void DrawJumpRay()
     {
         //Debug.Log(_select.GetMousePos());
-        var jumpDirection = (_select.GetMousePos() - this.transform.position).normalized;
-        Debug.DrawRay(this.transform.position, jumpDirection * jumpDistance);
+        var jumpDirection = (_select.GetMousePos() - GetCorrectPosition()).normalized;
+        Debug.DrawRay(GetCorrectPosition(), jumpDirection * jumpDistance);
     }
 
     public bool CheckJumpTargetReached()
     {
-        return (Vector3.Distance(transform.position, jumpTarget) < .1f);    
+        return (Vector3.Distance(GetCorrectPosition(), jumpTarget) < .1f);    
     }
 
     public bool CheckTargetReached()
     {
         if (_navAgent.pathPending)
         {
-            distanceToTarget = Vector3.Distance(this.transform.position, moveTarget);
+            distanceToTarget = Vector3.Distance(GetCorrectPosition(), moveTarget);
         }
         else
         {
@@ -133,5 +133,10 @@ public class UnitUtil : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    public Vector3 GetCorrectPosition()
+    {
+        return new Vector3(transform.position.x, 0, transform.position.z);
     }
 }

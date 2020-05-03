@@ -113,7 +113,7 @@ public class CastUtil : MonoBehaviour
         }
         else if (this.type == Type.AutoSpell)
         { // if auto spell / rclick, it needs a target object in range
-            if (CheckHasTarget() && CheckTargetInRange())
+            if (CheckHasTarget() && CheckTargetInRange(this.spell, 0))
             {
                 CreateSpell(this.spell);
             }
@@ -226,21 +226,36 @@ public class CastUtil : MonoBehaviour
         return isTargetable;
     }
 
-    public bool CheckTargetInRange()
+    public bool CheckTargetInRange(Spell spell, float mouseDistance)
     {
-        RaycastHit hit;
-        // Debug vision ray from unit to attack target
-        var dir = (castTarget.transform.position - this.transform.position);
-        Debug.DrawRay(transform.position, dir);
-        // Cast a ray from unit to attack target
-        if (Physics.Raycast(transform.position, dir, out hit))
+        if (spell.form.aim == Form.Aim.Auto && spell.form.origin == Form.Origin.Caster)
         {
-            //Debug.Log(hit.transform);
-            // If the hit target is the attack target
-            if (hit.transform == castTarget.transform && inCastRange.Contains(castTarget))
-            {                
-                // And the attack target is in range return true
-                return true;
+            RaycastHit hit;
+            // Debug vision ray from unit to attack target
+            var dir = (castTarget.transform.position - this.transform.position);
+            Debug.DrawRay(transform.position, dir);
+            // Cast a ray from unit to attack target
+            if (Physics.Raycast(transform.position, dir, out hit))
+            {
+                //Debug.Log(hit.transform);
+                // If the hit target is the attack target
+                if (hit.transform == castTarget.transform && inCastRange.Contains(castTarget))
+                {
+                    // And the attack target is in range return true
+                    return true;
+                }
+            }
+            return false;
+        }
+        else
+        {
+            if (spell.form.type == Form.Type.Projectile)
+            {
+                return mouseDistance < GetProjectileRange();
+            }
+            else if (spell.form.type == Form.Type.Area)
+            {
+                return mouseDistance < GetAreaRange();
             }
         }
         return false;
@@ -251,7 +266,11 @@ public class CastUtil : MonoBehaviour
         return castTarget != null || castDir != Vector3.zero;
     }
 
-
+    // Calculates the current area cast Range
+    public float GetAreaRange()
+    {
+        return areaCastRange;
+    }
 
     // Calculates the current projectile cast Range
     public float GetProjectileRange()
