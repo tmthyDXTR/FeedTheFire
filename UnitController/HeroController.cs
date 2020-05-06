@@ -68,78 +68,10 @@ public class HeroController : MonoBehaviour
         #region Input handler
         // First check if this unit is selected
         if (_selectable.isSelected)
-        {   // On Right click action
-            if (Input.GetMouseButtonDown(1))
-            {
-                if (!_cast.IsCastLocked)
-                {
-                    // Detect right click target here
-                    Debug.Log("Hero right click");
-                    GameObject clickedObj = _select.GetClickedObject();
-                    Vector3 clickedPos = _select.GetMousePos();
-                    // If the right clicked object is not targetable
-                    // If it is targetable, the check sets it as target object
-                    if (_cast.CheckTargetTargetable(clickedObj, _spell.GetSelectedSpell()))
-                    {
-                        if (state == State.Aiming)
-                        {
-                            //Select RClick action
-                            _select.SetSelectManagerActive(true);
-                            _spell.SelectSpell(0);
-                            _ui.RemoveUnitDraws();
-                            state = State.AutoCasting;
-                        }
-                    }
-                    else
-                    {
-                        // Set the clicked position as new move target
-                        _unit.SetMoveTarget(clickedPos);
-                    }
-                }
-            }                             
-            
-            // Space key action
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                if (!state.Equals(State.Jumping) && !_cast.IsCastLocked)
-                {
-                    Debug.Log("Jump");
-                    _unit.SetJumpTarget(_select.GetMousePos());
-                    _unit.lastPosition = this.transform.position;
-                    _cast.StopCast();
-                    _ui.RemoveUnitDraws();
-                    state = State.Jumping;
-                }
-            }
-
-            
-            // Spell Selection
-            if (Input.GetKeyDown(KeyCode.Alpha1))
-            {
-                HeroSelectSpell(1);
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha2))
-            {
-                HeroSelectSpell(2);
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha3))
-            {
-                HeroSelectSpell(3);
-            }
-            if (Input.GetKeyDown(KeyCode.Alpha4))
-            {
-                HeroSelectSpell(4);
-            }
-
-
-            // ESC Key
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                _select.SetSelectManagerActive(true);
-                _spell.SelectSpell(0);
-            }
-            #endregion
+        {
+            HeroInputs();
         }
+        #endregion
 
         // State Machine
         switch (state)
@@ -273,45 +205,50 @@ public class HeroController : MonoBehaviour
                     // If the left click target is in range                                             
                     else
                     {
-                        GameObject clickedObj = null;
-                        if (_select.GetClickedObject() != null)
-                            clickedObj = _select.GetClickedObject();
-                        //Debug.Log("Hit: " + clickedObj.transform.parent.gameObject.name);
-
-                        Vector3 clickedPos = _select.GetMousePos();
-                        Debug.Log("Hit Vector: " + clickedPos);
-
-                        // Check if spell needs a target object
-                        if (spell.form.aim == Form.Aim.Auto)
+                        if (!_cast.isWaitingForCoolDown)
                         {
-                            // If it is targetable, the check sets it as target object
-                            if (_cast.CheckTargetTargetable(clickedObj, spell))
+                            GameObject clickedObj = null;
+                            if (_select.GetClickedObject() != null)
+                                clickedObj = _select.GetClickedObject();
+                            //Debug.Log("Hit: " + clickedObj.transform.parent.gameObject.name);
+
+                            Vector3 clickedPos = _select.GetMousePos();
+                            Debug.Log("Hit Vector: " + clickedPos);
+
+                            // Check if spell needs a target object
+                            if (spell.form.aim == Form.Aim.Auto)
                             {
-                                Debug.Log("Cast Auto Target Spell");
-                                this.transform.LookAt(_cast.castTarget.transform);
+                                // If it is targetable, the check sets it as target object
+                                if (_cast.CheckTargetTargetable(clickedObj, spell))
+                                {
+                                    Debug.Log("Cast Auto Target Spell");
+                                    this.transform.LookAt(_cast.castTarget.transform);
+                                    _unit.StopMoving();
+                                    // Start casting
+                                    StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, spell));
+                                    state = State.Casting;
+                                    _ui.RemoveUnitDraws();
+                                    _select.SetSelectManagerActive(true);
+                                }
+                                else
+                                {
+                                    Debug.Log("Not Targetable");
+                                }
+                            }
+                            else if (spell.form.aim == Form.Aim.Directional || spell.form.aim == Form.Aim.Point)
+                            {
+                                Debug.Log("Cast Directional Spell");
+                                var castDir = clickedPos;
+                                _cast.castDir = castDir;
+                                this.transform.LookAt(clickedPos);
                                 _unit.StopMoving();
                                 // Start casting
                                 StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, spell));
                                 state = State.Casting;
                                 _ui.RemoveUnitDraws();
+                                _select.SetSelectManagerActive(true);
                             }
-                            else
-                            {
-                                Debug.Log("Not Targetable");
-                            }
-                        }
-                        else if (spell.form.aim == Form.Aim.Directional || spell.form.aim == Form.Aim.Point)
-                        {
-                            Debug.Log("Cast Directional Spell");
-                            var castDir = clickedPos;
-                            _cast.castDir = castDir;
-                            this.transform.LookAt(clickedPos);
-                            _unit.StopMoving();
-                            // Start casting
-                            StartCoroutine(_cast.StartCast(CastUtil.Type.SingleSpell, spell));
-                            state = State.Casting;
-                            _ui.RemoveUnitDraws();
-                        }
+                        }                                               
                     }
                 }
                 break;
@@ -359,12 +296,100 @@ public class HeroController : MonoBehaviour
     }
 
 
+
+    /// <summary>
+    /// Hero Helper methods for hero specific mouse input,
+    /// </summary>
+    private void HeroInputs()
+    {
+        // On Right click action
+        if (Input.GetMouseButtonDown(1))
+        {
+            if (!_cast.IsCastLocked)
+            {
+                // Detect right click target here
+                Debug.Log("Hero right click");
+                GameObject clickedObj = _select.GetClickedObject();
+                Vector3 clickedPos = _select.GetMousePos();
+                // If the right clicked object is not targetable
+                // If it is targetable, the check sets it as target object
+                if (_cast.CheckTargetTargetable(clickedObj, _spell.GetSelectedSpell()))
+                {
+                    if (state == State.Aiming)
+                    {
+                        //Select RClick action
+                        _select.SetSelectManagerActive(true);
+                        _spell.SelectSpell(0);
+                        _ui.RemoveUnitDraws();
+                        state = State.AutoCasting;
+                    }
+                }
+                else
+                {
+                    // Set the clicked position as new move target
+                    _unit.SetMoveTarget(clickedPos);
+                }
+            }
+        }
+
+        // Space key action
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (!state.Equals(State.Jumping) && !_cast.IsCastLocked)
+            {
+                Debug.Log("Jump");
+                _unit.SetJumpTarget(_select.GetMousePos());
+                _unit.lastPosition = this.transform.position;
+                _cast.StopCast();
+                _ui.RemoveUnitDraws();
+                state = State.Jumping;
+            }
+        }
+
+        // ESC Key
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            _ui.RemoveUnitDraws();
+            _select.SetSelectManagerActive(true);
+            _spell.SelectSpell(0);
+            state = State.Idling;
+        }
+
+        #region KeyCode Spell selection
+        // Spell Selection
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            HeroSelectSpell(1);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            HeroSelectSpell(2);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            HeroSelectSpell(3);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            HeroSelectSpell(4);
+        }
+        #endregion
+    }
+
+
     private void HeroSelectSpell(int slot)
     {
-        _ui.RemoveUnitDraws();
-        _select.SetSelectManagerActive(false);
-        _cast.StopCast();
-        _spell.SelectSpell(slot);
-        state = State.Aiming;
+        if (state != State.Casting)
+        {
+            _ui.RemoveUnitDraws();
+            _select.SetSelectManagerActive(false);
+            _cast.StopCast();
+            _spell.SelectSpell(slot);
+            state = State.Aiming;
+        }   
+        else
+        {
+            Debug.Log("Casting - can't switch spell");
+        }
     }
 }

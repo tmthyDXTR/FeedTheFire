@@ -10,7 +10,15 @@ public class HitBox : MonoBehaviour
         if (other.tag == "Fire")
         {
             var _spell = other.gameObject.GetComponent<SpellUtil>();
-            Debug.Log(this.transform.parent.name + " hit by " + _spell.name + " for " + _spell.power);
+            Debug.Log(this.transform.parent.name + " hit by " + _spell.name + " for " + _spell.power + " " + _spell.effect.type);
+
+            Destroy(other.gameObject);
+        }
+
+        if (other.tag == "Shadow")
+        {
+            var _spell = other.gameObject.GetComponent<SpellUtil>();
+            Debug.Log(this.transform.parent.name + " hit by " + _spell.name + " for " + _spell.power + " " + _spell.effect.type);
 
             Destroy(other.gameObject);
         }

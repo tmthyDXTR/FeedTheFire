@@ -16,4 +16,4 @@ MonoBehaviour:
   name: 
   description: 
   form: {fileID: 11400000, guid: bb9249ef2bf33a142860979d6e7112b0, type: 2}
-  effect: {fileID: 11400000, guid: eb5faa0d55f2a1141a69678fb20273d4, type: 2}
+  effect: {fileID: 11400000, guid: 37f6f2560dc40504b8f914941f30bad4, type: 2}

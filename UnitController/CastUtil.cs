@@ -24,8 +24,8 @@ public class CastUtil : MonoBehaviour
     private float projectileSpeed = 10f;
     [SerializeField]
     private float areaCastRange = 7f;
-    [SerializeField]
-    private bool isWaitingForCoolDown = false;
+    [SerializeField]////// Public for now
+    public bool isWaitingForCoolDown = false;
     [SerializeField]
     private float globalCoolDown = 1.5f;
 
@@ -78,15 +78,16 @@ public class CastUtil : MonoBehaviour
     {        
         this.spell = spell;
         this.type = type;
-        // If the casted spell is not auto/rclick
-        // lock the caster movement
-        if (this.type == Type.SingleSpell)
-        {
-            IsCastLocked = true;
-        }
 
         if (!isWaitingForCoolDown)
         {
+            // If the casted spell is not auto/rclick
+            // lock the caster movement
+            if (this.type == Type.SingleSpell)
+            {
+                IsCastLocked = true;
+            }
+
             Debug.Log("Start Cast");
             isWaitingForCoolDown = true;
             _anim.SetBool("isCasting", true);
@@ -115,6 +116,7 @@ public class CastUtil : MonoBehaviour
         { // if auto spell / rclick, it needs a target object in range
             if (CheckHasTarget() && CheckTargetInRange(this.spell, 0))
             {
+                IsCastLocked = true;
                 CreateSpell(this.spell);
             }
         }        
@@ -125,9 +127,9 @@ public class CastUtil : MonoBehaviour
         // of cast
         if (this.type == Type.SingleSpell)
         {
-            IsCastLocked = false;
             StopCast();
         }
+        IsCastLocked = false;
     }
 
     public void CreateSpell(Spell spell)
@@ -153,21 +155,21 @@ public class CastUtil : MonoBehaviour
     {
         // Instantiate spell dummy prefab
         return Instantiate(Resources.Load("NewSpell"),
-            GetSpellOriginVector(spell.form.origin),
+            GetSpellOriginVector(spell),
             Quaternion.identity,
             GameObject.Find("Spells").transform) as GameObject;
     }
 
-    private Vector3 GetSpellOriginVector(Form.Origin origin)
+    private Vector3 GetSpellOriginVector(Spell spell)
     {
         // Gets the origin position of the spell
 
         Vector3 spellOrigin = Vector3.zero;
-        if (origin == Form.Origin.Caster)
+        if (spell.form.origin == Form.Origin.Caster)
         {
             spellOrigin = this.transform.position + new Vector3(0, 1f, 0) + transform.forward * 1.5f;
         }
-        if (origin == Form.Origin.Sky)
+        if (spell.form.origin == Form.Origin.Sky)
         {
             if (castTarget != null)
             {
@@ -177,6 +179,10 @@ public class CastUtil : MonoBehaviour
             {
                 spellOrigin = castDir + new Vector3(0, 7, 0);
             }
+        }
+        if (spell.form.aim == Form.Aim.Point)
+        {
+            spellOrigin = castDir + new Vector3(0, 1f, 0);
         }
 
         return spellOrigin;

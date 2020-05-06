@@ -25,11 +25,13 @@ public class SelectionManager : MonoBehaviour
             if (Input.GetMouseButtonDown(0))
             {
                 var clickedObj = GetClickedObject();
-                Debug.Log("Clicked on " + clickedObj);
+                Debug.Log("Clicked on " + clickedObj.transform.parent.gameObject.name);
 
                 // Check if Hit Box collider clicked
-                if (clickedObj.name == "HitBox")
+                Selectable _selectable = clickedObj.transform.parent.gameObject.GetComponent<Selectable>();
+                if (_selectable != null)
                 {
+                    DeselectAll();
                     Select(clickedObj.transform.parent.gameObject);
                 }
 

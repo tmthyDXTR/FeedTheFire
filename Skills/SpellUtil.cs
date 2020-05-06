@@ -23,34 +23,42 @@ public class SpellUtil : MonoBehaviour
         this.gameObject.name = form.name;
         _cast = caster.GetComponent<CastUtil>();
 
-        SetSpellType(form.type);
+        SetSpellType(form);
         LoadSpellGfx();
         power = SpellPowerAdjust(_cast.GetSpellPower());
     }
 
 
-    public void SetSpellType(Form.Type type)
+    public void SetSpellType(Form form)
     {
-        if (type == Form.Type.Projectile)
+        if (form.type == Form.Type.Projectile && form.aim != Form.Aim.Point)
         {
             // Add Projectile Scripts and Objects to
             // the spell gameobject
             this.gameObject.AddComponent<ProjectileController>();
-            StartCoroutine(CreateCollider());
+            StartCoroutine(CreateCollider(0.1f));
             AdjustProjectile(_cast.GetProjectileRange(), _cast.GetProjectileSpeed());
         }
-        if (type == Form.Type.Area)
+        if (form.type == Form.Type.Area)
         {
             // Add Area Scripts and Objects to
             // the spell gameobject
             this.gameObject.AddComponent<AreaController>();
         }
+        else if (form.aim == Form.Aim.Point)
+        {
+            // Add Projectile Scripts and Objects to
+            // the spell gameobject
+            this.gameObject.AddComponent<ProjectileController>();
+            StartCoroutine(CreateCollider(0.001f));
+            AdjustProjectile(_cast.GetProjectileRange(), _cast.GetProjectileSpeed());
+        }
     }
 
-    private IEnumerator CreateCollider()
+    private IEnumerator CreateCollider(float waitTimeInSecs)
     {
         Debug.Log("Wait for Collider creation");
-        yield return new WaitForSeconds(0.1f);
+        yield return new WaitForSeconds(waitTimeInSecs);
         var collider = this.gameObject.AddComponent<SphereCollider>();
         collider.radius = 0.5f;
         collider.isTrigger = true;

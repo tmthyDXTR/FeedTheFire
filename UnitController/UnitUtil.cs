@@ -96,7 +96,7 @@ public class UnitUtil : MonoBehaviour
     {        
         if (this.transform.position != lastPosition)
         {
-            lastPosition = GetCorrectPosition();
+            lastPosition = this.transform.position;
             return false;
         }
         else
